@@ -2,8 +2,14 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test('renders React TypeScript TailwindCSS title', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const titleElement = screen.getByText(/React \+ TypeScript \+ TailwindCSS/i);
+  expect(titleElement).toBeInTheDocument();
+});
+
+test('renders success message', () => {
+  render(<App />);
+  const successMessage = screen.getByText(/Configuration réussie/i);
+  expect(successMessage).toBeInTheDocument();
 });
