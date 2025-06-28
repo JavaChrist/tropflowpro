@@ -6,7 +6,7 @@
 
 - ✅ Compte [Vercel](https://vercel.com) créé
 - ✅ Clé API Resend valide (`re_...`)
-- ✅ Email expéditeur vérifié sur Resend (`noreply@javachrist.fr`)
+- ✅ Email expéditeur vérifié sur Resend
 
 ### 2. **Déploiement sur Vercel**
 
@@ -26,8 +26,8 @@
    Sur le dashboard Vercel → Settings → Environment Variables :
 
    ```
-   RESEND_API_KEY = re_votre_clé_api_resend
-   FROM_EMAIL = noreply@javachrist.fr
+   RESEND_API_KEY = [votre_clé_api_resend]
+   FROM_EMAIL = [votre_email_vérifié]
    ```
 
 ### 3. **Vérification du déploiement**
