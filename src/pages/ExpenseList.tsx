@@ -117,20 +117,23 @@ const ExpenseList: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mes notes de frais</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">Mes notes de frais</h1>
           <p className="mt-1 text-sm text-gray-500">
             Gérez et suivez toutes vos notes de frais de déplacement
           </p>
         </div>
-        <Link
-          to="/new-expense"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle note de frais
-        </Link>
+        <div className="flex-shrink-0">
+          <Link
+            to="/new-expense"
+            className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200 w-full sm:w-auto justify-center"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Nouvelle note de frais</span>
+            <span className="sm:hidden">Nouvelle</span>
+          </Link>
+        </div>
       </div>
 
       {/* Filtres et recherche */}
@@ -196,22 +199,22 @@ const ExpenseList: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Destination
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Dates
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Montant
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Statut
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dernière modification
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    Modif.
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Actions
                   </th>
                 </tr>
@@ -219,50 +222,50 @@ const ExpenseList: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredReports.map((report) => (
                   <tr key={report.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-gray-900 max-w-32 sm:max-w-none truncate">
                           {report.travelInfo.destination}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 max-w-32 sm:max-w-none truncate">
                           {report.travelInfo.purpose}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-900">
                         <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                          {format(new Date(report.travelInfo.departure.date), 'dd/MM', { locale: fr })} - {format(new Date(report.travelInfo.return.date), 'dd/MM/yyyy', { locale: fr })}
+                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-gray-400 flex-shrink-0" />
+                          <span className="whitespace-nowrap">{format(new Date(report.travelInfo.departure.date), 'dd/MM', { locale: fr })} - {format(new Date(report.travelInfo.return.date), 'dd/MM/yyyy', { locale: fr })}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 flex items-center">
-                        <Euro className="h-4 w-4 mr-1 text-gray-400" />
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm font-medium text-gray-900 flex items-center">
+                        <Euro className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-gray-400" />
                         {Number(report.totalAmount || 0).toFixed(2)}€
                       </div>
                       <div className="text-xs text-gray-500">
                         {report.expenses.length} frais
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status || 'draft')}`}>
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-1.5 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status || 'draft')}`}>
                         {getStatusIcon(report.status || 'draft')}
-                        <span className="ml-1">{getStatusLabel(report.status || 'draft')}</span>
+                        <span className="ml-1 hidden sm:inline">{getStatusLabel(report.status || 'draft')}</span>
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                       {format(new Date(report.updatedAt), 'dd/MM/yyyy', { locale: fr })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-1 sm:space-x-2">
                         <Link
                           to={`/expense/${report.id}`}
                           className="text-blue-600 hover:text-blue-900 p-1 rounded"
                           title="Voir"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Link>
                         {(report.status === 'draft' || !report.status) && (
                           <Link
@@ -270,7 +273,7 @@ const ExpenseList: React.FC = () => {
                             className="text-green-600 hover:text-green-900 p-1 rounded"
                             title="Modifier"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Link>
                         )}
                         {(report.status === 'draft' || !report.status) && (
@@ -279,7 +282,7 @@ const ExpenseList: React.FC = () => {
                             className="text-red-600 hover:text-red-900 p-1 rounded"
                             title="Supprimer"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                           </button>
                         )}
                       </div>

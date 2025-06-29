@@ -205,4 +205,26 @@ export class FirebaseService {
   }
 }
 
+// Fonction utilitaire pour gérer les erreurs de connexion
+export const handleFirestoreError = (error: any, operation: string) => {
+  console.warn(`⚠️ Erreur Firestore ${operation}:`, error);
+
+  // Erreurs de blocage par extension/bloqueur
+  if (error.message?.includes('ERR_BLOCKED_BY_CLIENT') ||
+    error.code === 'unavailable' ||
+    error.message?.includes('network')) {
+    console.log('🔍 Possible blocage par extension de navigateur ou problème réseau');
+    console.log('💡 Solutions : Désactiver bloqueur de pub ou vérifier la connexion');
+    return {
+      type: 'network',
+      message: 'Problème de connexion détecté. Vérifiez votre réseau ou désactivez les bloqueurs de contenu.'
+    };
+  }
+
+  return {
+    type: 'unknown',
+    message: error.message || 'Erreur inconnue'
+  };
+};
+
 export default FirebaseService; 
