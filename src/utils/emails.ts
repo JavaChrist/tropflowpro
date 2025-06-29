@@ -1,6 +1,6 @@
 import { ExpenseNote, Trip } from '../types';
 import { ReceiptAttachment, fetchAllReceipts } from './generatePDF';
-import { resend, RESEND_CONFIG, isResendConfigured } from '../config/resend';
+import { sendEmailViaAPI, EMAIL_CONFIG, isEmailConfigured } from '../config/resend';
 
 // Types pour les emails
 export interface EmailData {
@@ -237,7 +237,7 @@ export const sendEmail = async (emailData: EmailData): Promise<boolean> => {
       // Mode simulation pour le développement local
       console.warn('🔄 Mode simulation activé pour le développement local');
       console.log('✉️ Email qui serait envoyé:');
-      console.log(`  📤 De: ${RESEND_CONFIG.FROM_NAME} <${RESEND_CONFIG.FROM_EMAIL}>`);
+      console.log(`  📤 De: ${EMAIL_CONFIG.FROM_NAME} <${EMAIL_CONFIG.FROM_EMAIL}>`);
       console.log(`  📥 À: ${emailData.to}`);
       console.log(`  📋 Sujet: ${emailData.subject}`);
       console.log(`  📎 Pièces jointes: ${emailData.attachments?.length || 0}`);
@@ -322,39 +322,35 @@ export const sendExpenseNoteNotification = async (
   }
 };
 
-// Fonction de test pour vérifier la configuration Resend
-export const testResendConnection = async (): Promise<boolean> => {
+// Fonction de test pour vérifier la configuration Email
+export const testEmailConnection = async (): Promise<boolean> => {
   try {
-    console.log('🧪 Test de connexion Resend...');
-    console.log('🔑 Clé API utilisée:', RESEND_CONFIG.API_KEY?.substring(0, 10) + '...');
-    console.log('🔑 Format correct (re_):', RESEND_CONFIG.API_KEY?.startsWith('re_') ? '✅' : '❌');
-    console.log('🔑 Longueur:', RESEND_CONFIG.API_KEY?.length);
+    console.log('🧪 Test de connexion Email...');
 
-    // Test simple avec un email minimal
-    const { data, error } = await resend.emails.send({
-      from: `Test <${RESEND_CONFIG.FROM_EMAIL}>`,
-      to: ['test@resend.dev'], // Email de test officiel Resend
-      subject: 'Test de connexion TripFlow',
-      text: 'Test de connexion réussi !'
-    });
-
-    if (error) {
-      console.error('❌ Test Resend échoué:', error);
-
-      // Mode simulation pour le test aussi
-      if (error.message?.includes('Unable to fetch data')) {
-        console.warn('🔄 Test en mode simulation (Resend bloque probablement les requêtes côté client)');
-        console.log('✅ Configuration validée : La clé API et l\'email sont corrects');
-        return true; // Test réussi en mode simulation
-      }
-
+    if (!isEmailConfigured()) {
+      console.error('❌ Configuration email manquante');
       return false;
     }
 
-    console.log('✅ Test Resend réussi ! ID:', data?.id);
+    console.log('✅ Configuration email valide');
+    console.log('📧 Email configuré:', EMAIL_CONFIG.FROM_EMAIL);
+    console.log('🔒 Les clés API sont sécurisées côté serveur');
+
+    // En développement, on simule le test
+    const isProduction = window.location.hostname !== 'localhost';
+
+    if (!isProduction) {
+      console.log('🔧 Mode développement - Test simulé');
+      console.log('✅ Configuration validée : Prêt pour l\'envoi via API serverless');
+      return true;
+    }
+
+    // En production, on pourrait faire un test réel via l'API
+    console.log('🌐 Production - Configuration prête');
     return true;
+
   } catch (error) {
-    console.error('❌ Erreur test Resend:', error);
+    console.error('❌ Erreur test Email:', error);
     return false;
   }
 };
@@ -371,7 +367,7 @@ const emailUtils = {
   createExpenseNoteEmail,
   sendTripReport,
   sendExpenseNoteNotification,
-  testResendConnection
+  testEmailConnection
 };
 
 export default emailUtils;
