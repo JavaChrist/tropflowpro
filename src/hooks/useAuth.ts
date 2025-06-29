@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
+import { FirebaseService, handleFirestoreError } from '../services/firebaseService';
 
 export interface UserProfile {
   uid: string;
@@ -232,4 +233,35 @@ export const useAuth = () => {
   };
 };
 
-export default useAuth; 
+export default useAuth;
+
+// Fonction pour gérer les erreurs de façon élégante
+const handleAuthError = (error: any, operation: string) => {
+  console.warn(`⚠️ Erreur d'authentification ${operation}:`, error);
+
+  // Vérifier si c'est une erreur de blocage
+  const errorInfo = handleFirestoreError(error, operation);
+
+  if (errorInfo.type === 'network') {
+    console.log('🔍 Problème de réseau détecté lors de l\'authentification');
+    return 'Problème de connexion. Vérifiez votre réseau.';
+  }
+
+  // Autres erreurs d'authentification
+  if (error.code) {
+    switch (error.code) {
+      case 'auth/user-not-found':
+        return 'Utilisateur non trouvé';
+      case 'auth/wrong-password':
+        return 'Mot de passe incorrect';
+      case 'auth/invalid-email':
+        return 'Email invalide';
+      case 'auth/network-request-failed':
+        return 'Problème de réseau';
+      default:
+        return error.message || 'Erreur inconnue';
+    }
+  }
+
+  return error.message || 'Erreur inconnue';
+}; 

@@ -42,112 +42,53 @@ export interface ReceiptAttachment {
 // Fonction pour récupérer une facture depuis Firebase Storage avec timeout
 export const fetchReceiptFromFirebase = async (receiptUrl: string): Promise<ReceiptAttachment | null> => {
   try {
-    if (receiptUrl.startsWith('blob:')) {
-      // URL blob temporaire (probablement expirée)
-      const response = await fetch(receiptUrl);
-      const blob = await response.blob();
-      const fileName = `facture-${Date.now()}.${blob.type.includes('pdf') ? 'pdf' : 'jpg'}`;
+    console.log('📎 Récupération de la facture:', receiptUrl);
 
-      return {
-        name: fileName,
-        url: receiptUrl,
-        blob,
-        type: blob.type
-      };
-    } else if (receiptUrl.includes('firebasestorage.googleapis.com')) {
-      // URL Firebase Storage - essayer SDK Firebase avec timeout, puis fetch direct
+    // ❌ Problème CORS: Firebase Storage bloque les requêtes fetch depuis le navigateur
+    // ✅ Solution: On ne télécharge plus les fichiers, on fournit juste les URLs
 
-      // MÉTHODE 1: SDK Firebase avec timeout de 10 secondes
-      try {
-        const urlParts = receiptUrl.split('/o/')[1];
-        if (!urlParts) {
-          throw new Error('URL Firebase Storage invalide');
-        }
+    // Extraire le nom du fichier depuis l'URL
+    const urlParts = receiptUrl.split('/');
+    const fileNameWithParams = urlParts[urlParts.length - 1];
+    const fileName = fileNameWithParams.split('?')[0]; // Enlever les paramètres
+    const decodedFileName = decodeURIComponent(fileName);
 
-        const filePath = decodeURIComponent(urlParts.split('?')[0]);
-        const fileRef = ref(storage, filePath);
+    // Déterminer le type de fichier
+    const extension = decodedFileName.split('.').pop()?.toLowerCase() || '';
+    let contentType = 'application/octet-stream';
 
-        // Créer une promesse avec timeout de 10 secondes
-        const downloadPromise = getBlob(fileRef);
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => {
-            reject(new Error('Firebase SDK timeout après 10 secondes'));
-          }, 10000);
-        });
-
-        const blob = await Promise.race([downloadPromise, timeoutPromise]);
-        const fileName = filePath.split('/').pop() || 'facture.pdf';
-
-        return {
-          name: fileName,
-          url: receiptUrl,
-          blob,
-          type: blob.type
-        };
-      } catch (firebaseError) {
-        // MÉTHODE 2: Fetch direct (contournement robuste)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          controller.abort();
-        }, 15000); // 15 secondes
-
-        try {
-          const response = await fetch(receiptUrl, {
-            method: 'GET',
-            mode: 'cors',
-            credentials: 'omit',
-            headers: {
-              'Accept': '*/*',
-              'Cache-Control': 'no-cache'
-            },
-            signal: controller.signal
-          });
-
-          clearTimeout(timeoutId);
-
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-
-          const blob = await response.blob();
-          const fileName = receiptUrl.split('/receipts%2F')[1]?.split('?')[0] || 'facture.pdf';
-
-          return {
-            name: decodeURIComponent(fileName),
-            url: receiptUrl,
-            blob,
-            type: blob.type
-          };
-        } catch (fetchError) {
-          clearTimeout(timeoutId);
-          throw fetchError;
-        }
-      }
-    } else {
-      // Autre type d'URL externe
-      const response = await fetch(receiptUrl, {
-        method: 'GET',
-        mode: 'cors',
-        credentials: 'omit'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      const fileName = receiptUrl.split('/').pop()?.split('?')[0] || 'facture.pdf';
-
-      return {
-        name: fileName,
-        url: receiptUrl,
-        blob,
-        type: blob.type
-      };
+    switch (extension) {
+      case 'pdf':
+        contentType = 'application/pdf';
+        break;
+      case 'jpg':
+      case 'jpeg':
+        contentType = 'image/jpeg';
+        break;
+      case 'png':
+        contentType = 'image/png';
+        break;
+      case 'gif':
+        contentType = 'image/gif';
+        break;
     }
+
+    // Créer un blob virtuel pour maintenir la compatibilité
+    // (même si on ne peut pas télécharger le contenu réel à cause de CORS)
+    const virtualBlob = new Blob([''], { type: contentType });
+
+    console.log('✅ Facture référencée (CORS évité):', decodedFileName);
+
+    return {
+      name: decodedFileName,
+      url: receiptUrl,
+      blob: virtualBlob,
+      type: contentType
+    };
+
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération de la facture:', receiptUrl, error);
-    return null; // Plus de placeholders - retourne null si échec
+    console.error('❌ Erreur lors de la récupération de la facture:', error);
+    return null;
   }
 };
 
@@ -239,16 +180,28 @@ export const generateExpensePDFContent = (
     <head>
       <meta charset="UTF-8">
       <style>
-        body { 
-          font-family: Arial, sans-serif; 
-          margin: 0; 
-          padding: 20px; 
-          background: white;
-          color: #333;
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: 'Arial', sans-serif;
+          font-size: 14px;
+          line-height: 1.6;
+          color: #1f2937;
+          background-color: white;
+          box-sizing: border-box;
+        }
+        .container {
+          max-width: 180mm;
+          margin: 0 auto;
+          padding: 15mm 15mm;
+          box-sizing: border-box;
+          background-color: white;
         }
         .header {
           text-align: center;
           margin-bottom: 40px;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #3b82f6;
         }
         .logo {
           display: flex;
@@ -368,45 +321,46 @@ export const generateExpensePDFContent = (
       </style>
     </head>
     <body>
-      <div class="header">
-        <div class="logo">
-          <div class="logo-icon"></div>
-          <span class="logo-text">TripFlow</span>
+      <div class="container">
+        <div class="header">
+          <div class="logo">
+            <div class="logo-icon"></div>
+            <span class="logo-text">TripFlow</span>
+          </div>
+          <div class="trip-title">${tripName}</div>
+          <div class="trip-info">${destination}${dates ? ` • ${dates}` : ''}</div>
         </div>
-        <div class="trip-title">${tripName}</div>
-        <div class="trip-info">${destination}${dates ? ` • ${dates}` : ''}</div>
-      </div>
 
-      <div class="details">
-        <div class="detail-item">
-          <span class="detail-label">Numéro de Contrat</span>
-          <span class="detail-value">${contractNumber}</span>
+        <div class="details">
+          <div class="detail-item">
+            <span class="detail-label">Numéro de Contrat</span>
+            <span class="detail-value">${contractNumber}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Collaborateur</span>
+            <span class="detail-value">${collaborator}</span>
+          </div>
+          ${remarks ? `
+          <div class="detail-item">
+            <span class="detail-label">Remarques</span>
+            <span class="detail-value">${remarks}</span>
+          </div>
+          ` : ''}
         </div>
-        <div class="detail-item">
-          <span class="detail-label">Collaborateur</span>
-          <span class="detail-value">${collaborator}</span>
-        </div>
-        ${remarks ? `
-        <div class="detail-item">
-          <span class="detail-label">Remarques</span>
-          <span class="detail-value">${remarks}</span>
-        </div>
-        ` : ''}
-      </div>
 
-      <div class="expenses-title">Frais Prévisionnels</div>
+        <div class="expenses-title">Frais Prévisionnels</div>
 
-      <table class="table">
-        <thead>
-          <tr>
-            <th style="width: 25%;">FRAIS PRÉVISIONNELS</th>
-            <th style="width: 15%; text-align: center;">VIA VELOCE</th>
-            <th style="width: 15%; text-align: center;">FRAIS PERSO</th>
-            <th style="width: 45%;">COMMENTAIRES</th>
-          </tr>
-        </thead>
-        <tbody>
-  `;
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 25%;">FRAIS PRÉVISIONNELS</th>
+              <th style="width: 15%; text-align: center;">VIA VELOCE</th>
+              <th style="width: 15%; text-align: center;">FRAIS PERSO</th>
+              <th style="width: 45%;">COMMENTAIRES</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
 
   // Générer les lignes du tableau
   Object.entries(categories).forEach(([key, category]) => {
@@ -437,11 +391,12 @@ export const generateExpensePDFContent = (
   });
 
   htmlContent += `
-        </tbody>
-      </table>
+          </tbody>
+        </table>
 
-      <div class="totals">
-        <div class="total-general">Total général: ${formatAmountForPDF(totalAmount)}</div>
+        <div class="totals">
+          <div class="total-general">Total général: ${formatAmountForPDF(totalAmount)}</div>
+        </div>
       </div>
     </body>
     </html>
@@ -496,6 +451,7 @@ export const downloadPDF = async (
     tempDiv.style.width = '210mm'; // A4 width
     tempDiv.style.backgroundColor = 'white';
     tempDiv.style.fontFamily = 'Arial, sans-serif';
+    tempDiv.style.boxSizing = 'border-box';
     document.body.appendChild(tempDiv);
 
     // Importer html2canvas pour convertir HTML en image
@@ -507,7 +463,8 @@ export const downloadPDF = async (
       useCORS: true,
       backgroundColor: '#ffffff',
       width: 794, // A4 width in pixels at 96 DPI
-      height: 1123 // A4 height in pixels at 96 DPI
+      allowTaint: false,
+      logging: false
     });
 
     // Nettoyer l'élément temporaire
@@ -516,31 +473,73 @@ export const downloadPDF = async (
     // Créer le PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
 
-    // Ajouter l'image au PDF
+    // Calculs de dimensions avec marges réelles
     const imgData = canvas.toDataURL('image/png');
-    const imgWidth = 210; // A4 width in mm
-    const pageHeight = 295; // A4 height in mm
+    const pdfWidth = 210; // A4 width in mm
+    const pdfHeight = 297; // A4 height in mm  
+    const marginTop = 15; // Marge du haut
+    const marginBottom = 15; // Marge du bas
+    const marginLeft = 15; // Marge gauche
+    const marginRight = 15; // Marge droite
+    const usableHeight = pdfHeight - marginTop - marginBottom; // 267mm
+    const usableWidth = pdfWidth - marginLeft - marginRight; // 180mm
+
+    // Ajuster les dimensions de l'image avec marges
+    const imgWidth = usableWidth; // Largeur réduite pour les marges
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
 
-    let position = 0;
+    console.log(`📏 Image: ${imgHeight.toFixed(1)}mm, Page utilisable: ${usableHeight}mm, Largeur: ${imgWidth}mm`);
 
-    // Ajouter la première page
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    // Vérifier combien de pages sont vraiment nécessaires
+    const requiredPages = Math.ceil(imgHeight / usableHeight);
+    console.log(`📄 Pages nécessaires: ${requiredPages}`);
 
-    // Ajouter des pages supplémentaires si nécessaire
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+    if (requiredPages === 1) {
+      // Une seule page suffit - centrer l'image avec marges
+      pdf.addImage(imgData, 'PNG', marginLeft, marginTop, imgWidth, imgHeight);
+      console.log('✅ PDF créé sur une seule page avec marges');
+    } else {
+      // Plusieurs pages nécessaires - approche par découpage avec marges
+      for (let pageIndex = 0; pageIndex < requiredPages; pageIndex++) {
+        if (pageIndex > 0) {
+          pdf.addPage();
+        }
+
+        // Calculer quelle partie de l'image afficher sur cette page
+        const sourceY = pageIndex * usableHeight;
+        const remainingHeight = imgHeight - sourceY;
+        const heightForThisPage = Math.min(usableHeight, remainingHeight);
+
+        // Créer un canvas temporaire pour cette portion
+        const pageCanvas = document.createElement('canvas');
+        const pageCtx = pageCanvas.getContext('2d');
+
+        if (pageCtx) {
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = (heightForThisPage / imgHeight) * canvas.height;
+
+          // Copier la portion appropriée de l'image originale
+          pageCtx.drawImage(
+            canvas,
+            0, (sourceY / imgHeight) * canvas.height, // Source position
+            canvas.width, pageCanvas.height, // Source dimensions
+            0, 0, // Destination position
+            canvas.width, pageCanvas.height // Destination dimensions
+          );
+
+          // Ajouter cette portion au PDF avec marges
+          const pageImgData = pageCanvas.toDataURL('image/png');
+          pdf.addImage(pageImgData, 'PNG', marginLeft, marginTop, imgWidth, heightForThisPage);
+
+          console.log(`📄 Page ${pageIndex + 1}/${requiredPages} ajoutée avec marges`);
+        }
+      }
     }
 
     // Télécharger le PDF
     pdf.save(filename);
 
-    console.log(`✅ PDF téléchargé: ${filename}`);
+    console.log(`✅ PDF téléchargé: ${filename} (${pdf.getNumberOfPages()} page(s))`);
     return true;
   } catch (error) {
     console.error('❌ Erreur lors de la génération du PDF:', error);
@@ -565,39 +564,35 @@ export const downloadReceiptsAsZip = async (
   tripName: string
 ): Promise<boolean> => {
   try {
-    console.log(`📦 Début du téléchargement de ${receipts.length} factures pour "${tripName}"`);
+    console.log(`📦 Ouverture de ${receipts.length} factures pour "${tripName}"`);
 
     if (receipts.length === 0) {
-      console.log('⚠️ Aucune facture à télécharger');
+      console.log('⚠️ Aucune facture à ouvrir');
       return true;
     }
 
-    // Simulation du téléchargement des factures individuelles
+    // Au lieu de télécharger, on ouvre chaque facture dans un nouvel onglet
+    console.log('🌐 Ouverture des factures dans de nouveaux onglets...');
+
     for (let i = 0; i < receipts.length; i++) {
       const receipt = receipts[i];
-      console.log(`📄 Téléchargement facture ${i + 1}/${receipts.length}: ${receipt.name} (${receipt.blob.size} octets)`);
+      const customFileName = `${tripName}-facture-${i + 1}-${receipt.name}`;
 
-      const url = URL.createObjectURL(receipt.blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${tripName}-facture-${i + 1}-${receipt.name}`;
-      a.style.display = 'none';
+      console.log(`📄 Ouverture facture ${i + 1}/${receipts.length}: ${receipt.name}`);
 
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Ouvrir la facture dans un nouvel onglet
+      setTimeout(() => {
+        openFileWithSaveButton(receipt.url, customFileName);
+      }, i * 500); // Délai entre les ouvertures pour éviter le blocage popup
 
-      console.log(`✅ Facture ${i + 1} téléchargée: ${a.download}`);
-
-      // Petit délai entre les téléchargements
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log(`✅ Facture ${i + 1} ouverte: ${customFileName}`);
     }
 
-    console.log('🎉 Toutes les factures ont été téléchargées avec succès');
+    console.log('🎉 Toutes les factures ont été ouvertes dans de nouveaux onglets');
+    console.log('💡 Utilisez "Enregistrer sous" (Ctrl+S) dans chaque onglet pour télécharger avec le bon nom');
     return true;
   } catch (error) {
-    console.error('❌ Erreur lors du téléchargement des factures:', error);
+    console.error('❌ Erreur lors de l\'ouverture des factures:', error);
     return false;
   }
 };
@@ -655,24 +650,24 @@ export const generateTripExpenseReport = async (
     const pdfSuccess = await downloadPDF(htmlContent, filename);
     console.log(`📄 PDF principal: ${pdfSuccess ? '✅ Généré' : '❌ Échec'}`);
 
-    // ÉTAPE 2 : Récupérer et télécharger les factures SÉPARÉMENT
+    // ÉTAPE 2 : Récupérer et ouvrir les factures SÉPARÉMENT
     let receipts: ReceiptAttachment[] = [];
     let receiptsSuccess = true;
 
     if (downloadReceipts) {
-      console.log('📎 Récupération des factures...');
+      console.log('📎 Préparation des factures...');
 
       try {
         receipts = await fetchAllReceipts(expenseNotes);
 
         if (receipts.length > 0) {
-          console.log(`📎 Téléchargement des ${receipts.length} factures...`);
+          console.log(`📎 Ouverture des ${receipts.length} factures...`);
           receiptsSuccess = await downloadReceiptsAsZip(receipts, tripData.name);
         } else {
-          console.log('⚠️ Aucune facture trouvée à télécharger');
+          console.log('⚠️ Aucune facture trouvée à ouvrir');
         }
       } catch (receiptError) {
-        console.error('❌ Erreur lors de la récupération des factures:', receiptError);
+        console.error('❌ Erreur lors de la préparation des factures:', receiptError);
         receiptsSuccess = false;
       }
     }
@@ -687,126 +682,71 @@ export const generateTripExpenseReport = async (
   }
 };
 
-// Fonction pour télécharger un fichier Firebase avec le bon nom (contournement CORS avancé)
+// Fonction pour télécharger un fichier Firebase avec le bon nom (sans CORS)
 export const downloadFirebaseFile = async (receiptUrl: string, fileName: string): Promise<boolean> => {
   try {
-    console.log('📥 Téléchargement Firebase avec nom personnalisé:', fileName);
+    console.log('📥 Ouverture de la facture:', fileName);
 
-    // Créer un iframe invisible pour contourner les restrictions CORS
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = receiptUrl;
-    document.body.appendChild(iframe);
-
-    // Attendre un peu pour le chargement
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Nettoyer l'iframe
-    document.body.removeChild(iframe);
-
-    console.log('✅ Iframe créée pour:', fileName);
-
-    // Alternative : créer un lien de téléchargement forcé
+    // Créer un lien qui ouvre le fichier dans un nouvel onglet
+    // L'utilisateur peut ensuite utiliser "Enregistrer sous" pour télécharger avec le bon nom
     const a = document.createElement('a');
     a.href = receiptUrl;
-    a.download = fileName;
     a.target = '_blank';
+    a.rel = 'noopener noreferrer';
     a.style.display = 'none';
 
     document.body.appendChild(a);
+    a.click();
 
-    // Simuler un clic avec délai
     setTimeout(() => {
-      a.click();
-      setTimeout(() => {
-        if (document.body.contains(a)) {
-          document.body.removeChild(a);
-        }
-      }, 1000);
+      if (document.body.contains(a)) {
+        document.body.removeChild(a);
+      }
     }, 100);
 
-    console.log('✅ Lien de téléchargement créé:', fileName);
+    console.log('✅ Facture ouverte dans un nouvel onglet:', fileName);
+    console.log('💡 L\'utilisateur peut utiliser "Enregistrer sous" pour sauvegarder avec le bon nom');
     return true;
 
   } catch (error) {
-    console.error('❌ Erreur téléchargement Firebase:', error);
+    console.error('❌ Erreur ouverture de facture:', error);
     return false;
   }
 };
 
 // Fonction pour ouvrir le fichier dans un nouvel onglet avec bouton de sauvegarde
 export const openFileWithSaveButton = (receiptUrl: string, fileName: string): void => {
-  console.log('🌐 Ouverture avec bouton de sauvegarde:', fileName);
+  console.log('🌐 Ouverture avec instructions:', fileName);
 
-  // Ouvrir dans un nouvel onglet
-  const newWindow = window.open(receiptUrl, '_blank');
+  try {
+    // Ouvrir dans un nouvel onglet
+    const newWindow = window.open(receiptUrl, '_blank', 'noopener,noreferrer');
 
-  if (newWindow) {
-    // Essayer d'ajouter du JavaScript dans le nouvel onglet pour faciliter la sauvegarde
-    setTimeout(() => {
-      try {
-        const script = newWindow.document.createElement('div');
-        script.innerHTML = `
-          <div style="position: fixed; top: 20px; right: 20px; z-index: 10000; background: #3b82f6; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: system-ui; cursor: pointer;" onclick="
-            const a = document.createElement('a');
-            a.href = window.location.href;
-            a.download = '${fileName}';
-            a.click();
-          ">
-            💾 Sauvegarder comme: ${fileName}
-          </div>
-        `;
-        newWindow.document.body.appendChild(script);
-        console.log('✅ Bouton de sauvegarde ajouté à l\'onglet');
-      } catch (e) {
-        console.log('⚠️ Impossible d\'ajouter le bouton (CORS), utilisez Ctrl+S');
-      }
-    }, 1500);
+    if (newWindow) {
+      console.log('✅ Facture ouverte dans un nouvel onglet');
+      console.log(`💾 Pour sauvegarder: Clic droit → "Enregistrer sous" → renommer en "${fileName}"`);
+    } else {
+      console.log('⚠️ Popup bloqué - tentative avec lien direct');
+      window.location.href = receiptUrl;
+    }
+  } catch (error) {
+    console.error('❌ Erreur ouverture:', error);
+    // Fallback: redirection directe
+    window.location.href = receiptUrl;
   }
 };
 
-// Fonction pour forcer le téléchargement avec le bon nom (contournement Firebase)
+// Fonction simplifiée pour télécharger les factures (sans CORS)
 export const forceDownloadWithName = async (firebaseUrl: string, customFileName: string): Promise<boolean> => {
   try {
-    console.log('🔄 Téléchargement forcé avec nom personnalisé:', customFileName);
+    console.log('🔄 Ouverture de la facture pour téléchargement:', customFileName);
 
-    // Méthode 1: Créer un lien avec dataURL (fonctionne mieux)
-    const response = await fetch(firebaseUrl, {
-      method: 'GET',
-      mode: 'cors',
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-
-    // Créer un lien de téléchargement avec le nom personnalisé
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = customFileName;
-    a.style.display = 'none';
-
-    document.body.appendChild(a);
-    a.click();
-
-    // Nettoyer
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
-
-    console.log('✅ Téléchargement forcé réussi:', customFileName);
-    return true;
+    // Au lieu d'essayer de contourner CORS, on ouvre simplement le fichier
+    // L'utilisateur peut ensuite utiliser "Enregistrer sous" avec le bon nom
+    return await downloadFirebaseFile(firebaseUrl, customFileName);
 
   } catch (error) {
-    console.error('❌ Erreur téléchargement forcé:', error);
-
-    // Fallback: ouvrir dans nouvel onglet
-    console.log('🔄 Fallback: ouverture dans nouvel onglet');
-    window.open(firebaseUrl, '_blank');
+    console.error('❌ Erreur téléchargement:', error);
     return false;
   }
 };

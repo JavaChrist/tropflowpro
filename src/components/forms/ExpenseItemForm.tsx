@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import {
   Plus,
   Upload,
-  Camera,
   Plane,
   Car,
   Train,
@@ -15,7 +14,6 @@ import {
   Calendar,
   X
 } from 'lucide-react';
-import CameraCapture from '../CameraCapture';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
 
@@ -35,6 +33,8 @@ interface CreateExpenseNoteData {
 interface ExpenseItemFormProps {
   onAddExpense: (expense: CreateExpenseNoteData) => void;
   onClose: () => void;
+  initialData?: Partial<CreateExpenseNoteData & { receiptFile?: File | null; }>;
+  isEditing?: boolean;
 }
 
 interface FormData {
@@ -46,12 +46,11 @@ interface FormData {
   date: string;
 }
 
-const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose }) => {
+const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose, initialData, isEditing = false }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialData?.receiptUrl || null);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(initialData?.receiptUrl || null);
 
   const {
     register,
@@ -61,12 +60,12 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
     setValue
   } = useForm<FormData>({
     defaultValues: {
-      category: 'transport_long',
-      subcategory: '',
-      amount: 0,
-      isVeloce: false,
-      isPersonal: false,
-      date: new Date().toISOString().split('T')[0]
+      category: initialData?.category || 'transport_long',
+      subcategory: initialData?.subcategory || '',
+      amount: initialData?.amount || 0,
+      isVeloce: initialData?.isVeloce || false,
+      isPersonal: initialData?.isPersonal || false,
+      date: initialData?.date || new Date().toISOString().split('T')[0]
     }
   });
 
@@ -164,49 +163,7 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
     }
   };
 
-  const handleCameraClick = () => {
-    // Vérifier si l'API mediaDevices est supportée
-    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
-      setShowCamera(true);
-    } else {
-      // Fallback pour les navigateurs non compatibles
-      alert('Votre navigateur ne supporte pas la capture photo. Utilisez le bouton d\'upload.');
-    }
-  };
 
-  const handleCameraCapture = async (file: File) => {
-    setSelectedFile(file);
-    setShowCamera(false);
-    setIsUploadingFile(true);
-
-    try {
-      console.log('📤 Upload de la photo capturée vers Firebase Storage...');
-
-      // Créer une référence unique pour la photo
-      const fileName = `receipts/camera_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
-      const fileRef = ref(storage, fileName);
-
-      // Upload vers Firebase Storage
-      const snapshot = await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      console.log('✅ Photo uploadée avec succès:', downloadURL);
-
-      // Stocker l'URL Firebase persistante
-      setUploadedFileUrl(downloadURL);
-
-      // Créer URL blob pour l'aperçu local
-      const previewURL = URL.createObjectURL(file);
-      setPreviewUrl(previewURL);
-
-    } catch (error) {
-      console.error('❌ Erreur lors de l\'upload de la photo:', error);
-      alert('Erreur lors de l\'upload de la photo. Veuillez réessayer.');
-      setSelectedFile(null);
-    } finally {
-      setIsUploadingFile(false);
-    }
-  };
 
   const removeFile = () => {
     setSelectedFile(null);
@@ -245,7 +202,7 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600 px-6 py-4 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Ajouter une note de frais
+              {isEditing ? 'Modifier la note de frais' : 'Ajouter une note de frais'}
             </h3>
             <button
               onClick={onClose}
@@ -402,41 +359,29 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
                   <div className="text-center">
                     <Receipt className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <label className={`cursor-pointer ${isUploadingFile ? 'opacity-50 pointer-events-none' : ''}`}>
-                        <input
-                          type="file"
-                          accept="image/*,.pdf"
-                          onChange={handleFileChange}
-                          className="sr-only"
-                          disabled={isUploadingFile}
-                        />
-                        <div className="w-full p-4 border-2 border-dashed rounded-lg text-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border-gray-300 dark:border-gray-600">
-                          {isUploadingFile ? (
-                            <>
-                              <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent mx-auto mb-2"></div>
-                              <span className="text-sm text-blue-600 dark:text-blue-400">Upload en cours...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                              <span className="text-sm text-gray-600 dark:text-gray-300">Choisir un fichier</span>
-                            </>
-                          )}
-                        </div>
-                      </label>
-
-                      <button
-                        type="button"
-                        onClick={handleCameraClick}
+                    <label className={`cursor-pointer block ${isUploadingFile ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleFileChange}
+                        className="sr-only"
                         disabled={isUploadingFile}
-                        className={`w-full p-4 border-2 border-dashed rounded-lg text-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border-gray-300 dark:border-gray-600 ${isUploadingFile ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        <Camera className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-300">Prendre une photo</span>
-                      </button>
-                    </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      />
+                      <div className="w-full max-w-xs mx-auto p-4 border-2 border-dashed rounded-lg text-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border-gray-300 dark:border-gray-600">
+                        {isUploadingFile ? (
+                          <>
+                            <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent mx-auto mb-2"></div>
+                            <span className="text-sm text-blue-600 dark:text-blue-400">Upload en cours...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-6 w-6 mx-auto mb-2 text-gray-400" />
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Choisir une facture</span>
+                          </>
+                        )}
+                      </div>
+                    </label>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
                       PNG, JPG, PDF jusqu'à 10MB
                     </p>
                   </div>
@@ -499,20 +444,13 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Plus className="h-4 w-4 mr-2 inline" />
-                Ajouter la note
+                {isEditing ? 'Enregistrer les modifications' : 'Ajouter la note de frais'}
               </button>
             </div>
           </form>
         </div>
       </div>
 
-      {/* Composant de capture photo */}
-      {showCamera && (
-        <CameraCapture
-          onCapture={handleCameraCapture}
-          onClose={() => setShowCamera(false)}
-        />
-      )}
     </>
   );
 };

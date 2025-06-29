@@ -62,6 +62,7 @@ interface ExpenseStore {
 
   // Actions pour sauvegarder
   saveReport: (userId: string) => Promise<string>;
+  updateReport: (reportId: string) => Promise<void>;
   submitReport: (reportId: string) => Promise<void>;
 
   // Actions pour gérer les notes
@@ -214,6 +215,51 @@ const useExpenseStore = create<ExpenseStore>((set, get) => ({
       return reportId;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde';
+      set({ isLoading: false, error: errorMessage });
+      throw error;
+    }
+  },
+
+  // Mettre à jour un rapport existant
+  updateReport: async (reportId: string) => {
+    const state = get();
+    set({ isLoading: true, error: null });
+
+    try {
+      const currentReport = state.currentReport;
+
+      if (!currentReport.travelInfo || !currentReport.contractNumber) {
+        throw new Error('Informations de voyage manquantes');
+      }
+
+      const updateData = {
+        contractNumber: currentReport.contractNumber,
+        collaborator: currentReport.collaborator!,
+        travelInfo: currentReport.travelInfo,
+        expenses: currentReport.expenses || [],
+        totalAmount: currentReport.totalAmount || 0,
+        totalVeloce: currentReport.totalVeloce || 0,
+        totalPersonal: currentReport.totalPersonal || 0,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await firebaseService.updateExpenseReport(reportId, updateData);
+
+      // Mettre à jour le rapport local
+      set((state) => ({
+        reports: state.reports.map(report =>
+          report.id === reportId
+            ? { ...report, ...updateData }
+            : report
+        ),
+        currentReport: {
+          ...state.currentReport,
+          ...updateData,
+        },
+        isLoading: false,
+      }));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la mise à jour';
       set({ isLoading: false, error: errorMessage });
       throw error;
     }

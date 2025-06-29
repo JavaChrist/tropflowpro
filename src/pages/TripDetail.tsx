@@ -7,7 +7,8 @@ import {
   Plus,
   Download,
   Send,
-  CheckCircle
+  CheckCircle,
+  Edit
 } from 'lucide-react';
 import useTripStore from '../store/tripStore';
 import useAuth from '../hooks/useAuth';
@@ -17,6 +18,7 @@ import { ExpenseNote } from '../types';
 import ExpenseItemForm from '../components/forms/ExpenseItemForm';
 import ConfirmModal from '../components/ConfirmModal';
 import TripReportActions from '../components/TripReportActions';
+import { generateTripExpenseReport } from '../utils/generatePDF';
 
 // Import du type depuis le store
 interface CreateExpenseNoteData {
@@ -43,11 +45,13 @@ const TripDetail: React.FC = () => {
     deleteTrip,
     deleteExpenseNote,
     addExpenseNote,
+    updateExpenseNote,
     isLoading,
     error
   } = useTripStore();
   const { userProfile } = useAuth();
   const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [editingNote, setEditingNote] = useState<ExpenseNote | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{
     isOpen: boolean;
     type: 'trip' | 'note';
@@ -80,11 +84,28 @@ const TripDetail: React.FC = () => {
     if (!userProfile || !id) return;
 
     try {
-      await addExpenseNote(id, noteData, userProfile);
+      if (editingNote) {
+        // Mode édition - mettre à jour la note existante
+        await updateExpenseNote(editingNote.id, noteData);
+        setEditingNote(null);
+      } else {
+        // Mode ajout - ajouter une nouvelle note
+        await addExpenseNote(id, noteData, userProfile);
+      }
       setShowExpenseForm(false);
     } catch (error) {
-      console.error('Erreur lors de l\'ajout:', error);
+      console.error('Erreur lors de l\'ajout/modification:', error);
     }
+  };
+
+  const handleEditNoteClick = (note: ExpenseNote) => {
+    setEditingNote(note);
+    setShowExpenseForm(true);
+  };
+
+  const handleCloseExpenseForm = () => {
+    setShowExpenseForm(false);
+    setEditingNote(null);
   };
 
   // Grouper les notes par catégorie
@@ -168,6 +189,54 @@ const TripDetail: React.FC = () => {
   const handleReportError = (error: string) => {
     setReportMessage({ type: 'error', text: error });
     setTimeout(() => setReportMessage(null), 5000);
+  };
+
+  // Fonction pour l'impression simple (PDF sans factures)
+  const handleSimplePrint = async () => {
+    if (!currentTrip || !id) return;
+
+    try {
+      console.log('🖨️ Impression simple du rapport...');
+
+      const result = await generateTripExpenseReport(
+        id,
+        currentTripNotes,
+        {
+          name: currentTrip.name,
+          destination: currentTrip.destination,
+          departureDate: currentTrip.departureDate,
+          returnDate: currentTrip.returnDate,
+          contractNumber: currentTrip.contractNumber || 'N/A',
+          collaborator: currentTrip.collaborator,
+          remarks: currentTrip.remarks
+        },
+        {
+          filename: `rapport-simple-${currentTrip.name.replace(/[^a-zA-Z0-9]/g, '-')}.pdf`,
+          downloadReceipts: false // PAS de factures pour l'impression simple
+        }
+      );
+
+      if (result.success) {
+        setReportMessage({
+          type: 'success',
+          text: '✅ Impression simple générée avec succès ! (PDF sans factures)'
+        });
+        setTimeout(() => setReportMessage(null), 3000);
+      } else {
+        setReportMessage({
+          type: 'error',
+          text: '❌ Erreur lors de l\'impression simple. Vérifiez la console.'
+        });
+        setTimeout(() => setReportMessage(null), 5000);
+      }
+    } catch (error) {
+      console.error('❌ Erreur impression simple:', error);
+      setReportMessage({
+        type: 'error',
+        text: `❌ Erreur lors de l\'impression simple: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+      });
+      setTimeout(() => setReportMessage(null), 5000);
+    }
   };
 
   if (isLoading) {
@@ -398,13 +467,22 @@ const TripDetail: React.FC = () => {
                                       {cleanDescription} {Number(note.amount || 0).toFixed(2)} €
                                     </span>
                                     {(trip.status === 'draft' || !trip.status) && (
-                                      <button
-                                        onClick={() => handleDeleteNoteClick(note.id)}
-                                        className="ml-2 text-red-600 hover:text-red-800 print:hidden"
-                                        title="Supprimer"
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </button>
+                                      <div className="flex items-center space-x-1 print:hidden">
+                                        <button
+                                          onClick={() => handleEditNoteClick(note)}
+                                          className="text-blue-600 hover:text-blue-800"
+                                          title="Modifier"
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteNoteClick(note.id)}
+                                          className="text-red-600 hover:text-red-800"
+                                          title="Supprimer"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </button>
+                                      </div>
                                     )}
                                   </div>
                                 );
@@ -478,7 +556,7 @@ const TripDetail: React.FC = () => {
               {/* Actions PDF/Email - Remplacées par TripReportActions */}
               {/* Bouton d'impression basique conservé pour compatibilité */}
               <button
-                onClick={() => window.print()}
+                onClick={handleSimplePrint}
                 className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                 title="Impression simple (sans factures)"
               >
@@ -541,11 +619,23 @@ const TripDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal d'ajout de note de frais */}
+      {/* Modal d'ajout/modification de note de frais */}
       {showExpenseForm && (
         <ExpenseItemForm
           onAddExpense={handleAddExpenseNote}
-          onClose={() => setShowExpenseForm(false)}
+          onClose={handleCloseExpenseForm}
+          initialData={editingNote ? {
+            category: editingNote.category,
+            subcategory: editingNote.subcategory,
+            description: editingNote.description,
+            amount: editingNote.amount,
+            date: editingNote.date,
+            isVeloce: editingNote.isVeloce,
+            isPersonal: editingNote.isPersonal,
+            receiptUrl: editingNote.receiptUrl,
+            receiptName: editingNote.receiptName
+          } : undefined}
+          isEditing={!!editingNote}
         />
       )}
 

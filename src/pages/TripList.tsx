@@ -221,10 +221,10 @@ const TripList: React.FC = () => {
 
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className="flex items-center space-x-2 sm:space-x-3 min-h-[32px]">
                     <Link
                       to={`/trips/${trip.id}`}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                      className="text-blue-600 hover:text-blue-900 p-1 rounded inline-flex items-center justify-center"
                       title="Voir le déplacement"
                     >
                       <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -234,14 +234,14 @@ const TripList: React.FC = () => {
                       <>
                         <Link
                           to={`/trips/${trip.id}/edit`}
-                          className="text-green-600 hover:text-green-900 p-1 rounded"
+                          className="text-green-600 hover:text-green-900 p-1 rounded inline-flex items-center justify-center"
                           title="Modifier"
                         >
                           <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Link>
                         <button
                           onClick={() => handleDeleteClick(trip.id, trip.name)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded"
+                          className="text-red-600 hover:text-red-900 p-1 rounded inline-flex items-center justify-center"
                           title="Supprimer"
                         >
                           <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -252,7 +252,7 @@ const TripList: React.FC = () => {
                     {trip.status === 'submitted' && (
                       <Link
                         to={`/trips/${trip.id}/edit`}
-                        className="text-orange-600 hover:text-orange-900 p-1 rounded"
+                        className="text-orange-600 hover:text-orange-900 p-1 rounded inline-flex items-center justify-center"
                         title="Modifier (repasse en brouillon)"
                       >
                         <Edit className="h-3 w-3 sm:h-4 sm:w-4" />

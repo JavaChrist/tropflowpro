@@ -3,6 +3,7 @@ import { Trip, ExpenseNote } from '../types';
 import { generateTripExpenseReport } from '../utils/generatePDF';
 import { sendTripReport, TripEmailData } from '../utils/emails';
 import { Receipt, X, Download, ExternalLink, Info } from 'lucide-react';
+import AlertModal from './AlertModal';
 
 interface TripReportActionsProps {
   trip: Trip;
@@ -22,6 +23,7 @@ const TripReportActions: React.FC<TripReportActionsProps> = ({
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('');
   const [showReceiptsModal, setShowReceiptsModal] = useState(false);
+  const [alert, setAlert] = useState({ isOpen: false, title: '', message: '' });
 
   // Calculer les totaux
   const totalAmount = expenseNotes.reduce((sum, note) => sum + note.amount, 0);
@@ -112,7 +114,68 @@ const TripReportActions: React.FC<TripReportActionsProps> = ({
     setShowReceiptsModal(true);
   };
 
+  const handleDownloadPDF = async () => {
+    if (!trip || expenseNotes.length === 0) {
+      setAlert({
+        isOpen: true,
+        title: 'Aucune donnée',
+        message: 'Aucun déplacement ou note de frais à exporter.'
+      });
+      return;
+    }
 
+    setIsGeneratingPDF(true);
+    setAlert({ isOpen: false, title: '', message: '' });
+
+    try {
+      console.log('🚀 Génération du rapport PDF...');
+
+      const result = await generateTripExpenseReport(
+        trip.id,
+        expenseNotes,
+        {
+          name: trip.name,
+          destination: trip.destination,
+          departureDate: trip.departureDate,
+          returnDate: trip.returnDate,
+          contractNumber: trip.contractNumber || 'N/A',
+          collaborator: trip.collaborator,
+          remarks: trip.remarks
+        },
+        {
+          filename: `rapport-frais-${trip.name.replace(/[^a-zA-Z0-9]/g, '-')}.pdf`,
+          downloadReceipts: true
+        }
+      );
+
+      if (result.success) {
+        const message = result.receipts.length > 0
+          ? `✅ Rapport PDF généré avec succès !\n\n📎 ${result.receipts.length} facture(s) ont été ouvertes dans de nouveaux onglets.\n\n💡 Conseil : Dans chaque onglet, utilisez "Enregistrer sous" (Ctrl+S) pour télécharger la facture avec le bon nom.`
+          : '✅ Rapport PDF généré avec succès !';
+
+        setAlert({
+          isOpen: true,
+          title: 'Export réussi',
+          message
+        });
+      } else {
+        setAlert({
+          isOpen: true,
+          title: 'Erreur d\'export',
+          message: '❌ Une erreur est survenue lors de la génération du rapport. Vérifiez la console pour plus de détails.'
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la génération:', error);
+      setAlert({
+        isOpen: true,
+        title: 'Erreur d\'export',
+        message: `❌ Erreur lors de la génération du rapport: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   return (
     <>
@@ -245,6 +308,15 @@ const TripReportActions: React.FC<TripReportActionsProps> = ({
         onClose={() => setShowReceiptsModal(false)}
         trip={trip}
         expenseNotes={expenseNotes}
+      />
+
+      {/* Alert Modal pour les notifications */}
+      <AlertModal
+        isOpen={alert.isOpen}
+        onClose={() => setAlert({ isOpen: false, title: '', message: '' })}
+        title={alert.title}
+        message={alert.message}
+        type={alert.title.includes('réussi') ? 'success' : 'error'}
       />
     </>
   );

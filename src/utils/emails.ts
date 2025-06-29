@@ -224,8 +224,11 @@ export const sendEmail = async (emailData: EmailData): Promise<boolean> => {
       attachments: emailData.attachments?.length || 0
     });
 
-    // Détecter l'environnement
-    const isProduction = window.location.hostname !== 'localhost';
+    // Détecter l'environnement de production
+    const hostname = window.location.hostname;
+    const isProduction = hostname.includes('vercel.app') ||
+      hostname.includes('tropflow') ||
+      (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.startsWith('192.168.'));
 
     if (isProduction) {
       console.log('🌐 Environnement de production détecté - Utilisation de l\'API Vercel');
@@ -261,8 +264,11 @@ export const sendTripReport = async (
   tripData: TripEmailData
 ): Promise<boolean> => {
   try {
-    // Détecter l'environnement
-    const isProduction = window.location.hostname !== 'localhost';
+    // Détecter l'environnement de production (Vercel ou autre domaine de production)
+    const hostname = window.location.hostname;
+    const isProduction = hostname.includes('vercel.app') ||
+      hostname.includes('tropflow') ||
+      (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.startsWith('192.168.'));
 
     if (isProduction) {
       console.log('🌐 Envoi via API Vercel (production)');
@@ -336,8 +342,11 @@ export const testEmailConnection = async (): Promise<boolean> => {
     console.log('📧 Email configuré:', EMAIL_CONFIG.FROM_EMAIL);
     console.log('🔒 Les clés API sont sécurisées côté serveur');
 
-    // En développement, on simule le test
-    const isProduction = window.location.hostname !== 'localhost';
+    // Détecter l'environnement de production
+    const hostname = window.location.hostname;
+    const isProduction = hostname.includes('vercel.app') ||
+      hostname.includes('tropflow') ||
+      (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.startsWith('192.168.'));
 
     if (!isProduction) {
       console.log('🔧 Mode développement - Test simulé');
