@@ -1,14 +1,4 @@
 {
-  "env": {
-    "RESEND_API_KEY": "@resend-api-key",
-    "FROM_EMAIL": "@from-email"
-  },
-  "build": {
-    "env": {
-      "RESEND_API_KEY": "@resend-api-key",
-      "FROM_EMAIL": "@from-email"
-    }
-  },
   "functions": {
     "api/send-email.js": {
       "maxDuration": 30
