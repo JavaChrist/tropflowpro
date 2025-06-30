@@ -207,49 +207,49 @@ const Dashboard: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Cartes de statistiques */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-blue-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-blue-200 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                  <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="p-2 bg-blue-200 dark:bg-blue-900 rounded-lg">
+                  <MapPin className="h-6 w-6 text-blue-700 dark:text-blue-400" />
                 </div>
                 <div className="ml-4">
-                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total déplacements</h2>
+                  <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total déplacements</h2>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalTrips}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-gray-300 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
               <div className="flex items-center">
-                <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                  <FileText className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                <div className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg">
+                  <FileText className="h-6 w-6 text-gray-700 dark:text-gray-300" />
                 </div>
                 <div className="ml-4">
-                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Brouillons</h2>
+                  <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400">Brouillons</h2>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{draftTrips}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-yellow-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-yellow-200 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
               <div className="flex items-center">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-                  <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                <div className="p-2 bg-yellow-200 dark:bg-yellow-900 rounded-lg">
+                  <Clock className="h-6 w-6 text-yellow-700 dark:text-yellow-400" />
                 </div>
                 <div className="ml-4">
-                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Soumis</h2>
+                  <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400">Soumis</h2>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{submittedTrips}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-green-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-green-200 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="p-2 bg-green-200 dark:bg-green-900 rounded-lg">
+                  <CheckCircle className="h-6 w-6 text-green-700 dark:text-green-400" />
                 </div>
                 <div className="ml-4">
-                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Payés</h2>
+                  <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400">Payés</h2>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{paidTrips}</p>
                 </div>
               </div>
@@ -267,62 +267,62 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Actions rapides */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-gray-300 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions rapides</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             to="/trips/new"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors group"
+            className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group hover:-translate-y-1"
           >
-            <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-              <Plus className="h-5 w-5 text-blue-600" />
+            <div className="p-2 bg-blue-200 dark:bg-blue-900 rounded-lg group-hover:bg-blue-300 dark:group-hover:bg-blue-800 transition-colors">
+              <Plus className="h-5 w-5 text-blue-700 dark:text-blue-400" />
             </div>
             <div className="ml-3">
-              <p className="font-medium text-gray-900">Nouveau déplacement</p>
-              <p className="text-sm text-gray-500">Créer un déplacement</p>
+              <p className="font-medium text-gray-900 dark:text-white">Nouveau déplacement</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Créer un déplacement</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-gray-400 ml-auto group-hover:text-gray-600" />
+            <ArrowRight className="h-5 w-5 text-gray-400 ml-auto group-hover:text-gray-600 dark:group-hover:text-gray-300" />
           </Link>
 
           <Link
             to="/trips"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors group"
+            className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group hover:-translate-y-1"
           >
-            <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
-              <MapPin className="h-5 w-5 text-green-600" />
+            <div className="p-2 bg-green-200 dark:bg-green-900 rounded-lg group-hover:bg-green-300 dark:group-hover:bg-green-800 transition-colors">
+              <MapPin className="h-5 w-5 text-green-700 dark:text-green-400" />
             </div>
             <div className="ml-3">
-              <p className="font-medium text-gray-900">Tous les déplacements</p>
-              <p className="text-sm text-gray-500">Gérer vos déplacements</p>
+              <p className="font-medium text-gray-900 dark:text-white">Tous les déplacements</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Gérer vos déplacements</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-gray-400 ml-auto group-hover:text-gray-600" />
+            <ArrowRight className="h-5 w-5 text-gray-400 ml-auto group-hover:text-gray-600 dark:group-hover:text-gray-300" />
           </Link>
 
           <Link
             to="/trips?status=draft"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors group"
+            className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group hover:-translate-y-1"
           >
-            <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
-              <TrendingUp className="h-5 w-5 text-orange-600" />
+            <div className="p-2 bg-orange-200 dark:bg-orange-900 rounded-lg group-hover:bg-orange-300 dark:group-hover:bg-orange-800 transition-colors">
+              <TrendingUp className="h-5 w-5 text-orange-700 dark:text-orange-400" />
             </div>
             <div className="ml-3">
-              <p className="font-medium text-gray-900">Brouillons</p>
-              <p className="text-sm text-gray-500">{draftTrips} en cours</p>
+              <p className="font-medium text-gray-900 dark:text-white">Brouillons</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{draftTrips} en cours</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-gray-400 ml-auto group-hover:text-gray-600" />
+            <ArrowRight className="h-5 w-5 text-gray-400 ml-auto group-hover:text-gray-600 dark:group-hover:text-gray-300" />
           </Link>
         </div>
       </div>
 
       {/* Déplacements récents */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
         <div className="p-6 border-b border-gray-200 dark:border-gray-600">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Déplacements récents</h2>
             {trips.length > 5 && (
               <Link
                 to="/trips"
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium flex items-center"
               >
                 Voir tout
                 <ArrowRight className="h-4 w-4 ml-1" />
@@ -341,7 +341,7 @@ const Dashboard: React.FC = () => {
             <div className="mt-6">
               <Link
                 to="/trips/new"
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 hover:-translate-y-1 transition-all duration-200"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Créer mon premier déplacement
@@ -349,9 +349,9 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 dark:divide-gray-600">
             {recentTrips.map((trip) => (
-              <div key={trip.id} className="p-6 hover:bg-gray-50 transition-colors">
+              <div key={trip.id} className="p-6 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:-translate-y-1">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
@@ -363,7 +363,7 @@ const Dashboard: React.FC = () => {
                         <span className="ml-1">{getStatusLabel(trip.status || 'draft')}</span>
                       </span>
                     </div>
-                    <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="mt-1 flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                       <span className="flex items-center">
                         <MapPin className="h-4 w-4 mr-1" />
                         {trip.destination}
@@ -378,7 +378,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Link
                       to={`/trips/${trip.id}`}
-                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 hover:-translate-y-1"
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       Voir
