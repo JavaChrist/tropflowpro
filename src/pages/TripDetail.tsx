@@ -73,10 +73,10 @@ const TripDetail: React.FC = () => {
   // Mettre à jour le titre de la page pour l'impression
   useEffect(() => {
     if (currentTrip) {
-      document.title = `${currentTrip.name} - TripFlow`;
+      document.title = `${currentTrip.name} - TropFlow Pro`;
     }
     return () => {
-      document.title = 'TripFlow';
+      document.title = 'TropFlow Pro';
     };
   }, [currentTrip]);
 
@@ -313,7 +313,7 @@ const TripDetail: React.FC = () => {
       <div className="hidden print:block text-center print-header">
         <div className="flex items-center justify-center mb-2 print:mb-2">
           <div className="relative mr-3">
-            {/* Logo TripFlow pour impression */}
+            {/* Logo TropFlow Pro pour impression */}
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform rotate-12">
               <div className="flex items-center space-x-0.5">
                 <div className="w-2 h-2 bg-white rounded-full"></div>

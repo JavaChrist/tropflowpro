@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
@@ -6,20 +6,25 @@ import {
   Clock,
   CheckCircle,
   TrendingUp,
-  Euro,
   Calendar,
   ArrowRight,
   Eye,
-  MapPin
+  MapPin,
+  AlertTriangle
 } from 'lucide-react';
 import useTripStore from '../store/tripStore';
 import useAuth from '../hooks/useAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import UsageStats from '../components/UsageStats';
+import PlanModal from '../components/PlanModal';
+import { PlanType } from '../types';
+import PlanService from '../services/planService';
 
 const Dashboard: React.FC = () => {
   const { trips, loadTrips, isLoading } = useTripStore();
-  const { userProfile } = useAuth();
+  const { userProfile, updateUserSubscription } = useAuth();
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
 
   // Charger les déplacements au montage
   useEffect(() => {
@@ -38,6 +43,80 @@ const Dashboard: React.FC = () => {
   const recentTrips = [...trips]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 5);
+
+  const handleUpgradeClick = () => {
+    setIsPlanModalOpen(true);
+  };
+
+  const handleSelectPlan = async (planId: PlanType) => {
+    if (!userProfile) return;
+
+    try {
+      if (planId === 'free') {
+        // Rétrogradation vers le plan gratuit
+        const freeSubscription = {
+          ...userProfile.subscription,
+          planId,
+          status: 'active' as const,
+          updatedAt: new Date().toISOString()
+        };
+        await updateUserSubscription(freeSubscription);
+      } else {
+        // Upgrade vers un plan premium
+        if (PlanService.isEligibleForTrial(userProfile)) {
+          // Créer un abonnement d'essai
+          const trialSubscription = PlanService.createTrialSubscription(planId);
+          await updateUserSubscription(trialSubscription);
+          console.log('🎉 Période d\'essai activée pour', planId);
+        } else {
+          // Redirection vers Mollie pour le paiement
+          console.log('🔗 Redirection vers Mollie pour', planId);
+
+          try {
+            const response = await fetch('/api/mollie-payment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                action: 'create-checkout',
+                planId: planId,
+                userEmail: userProfile.email,
+                userId: userProfile.uid,
+                returnUrl: `${window.location.origin}/payment/success?plan=${planId}`,
+                webhookUrl: `${window.location.origin}/api/mollie-payment?webhook=true`
+              })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              // Rediriger vers la page de paiement Mollie
+              window.location.href = result.checkoutUrl;
+            } else {
+              throw new Error(result.error || 'Erreur lors de la création du checkout');
+            }
+          } catch (error) {
+            console.error('❌ Erreur checkout Mollie:', error);
+
+            // Fallback: simulation pour les tests
+            const mollieIds = PlanService.generateMollieTestIds();
+            const paidSubscription = PlanService.createPaidSubscription(
+              planId,
+              mollieIds.customerId,
+              mollieIds.subscriptionId
+            );
+            await updateUserSubscription(paidSubscription);
+            console.log('🧪 Simulation paiement Mollie activée');
+          }
+        }
+      }
+
+      console.log('✅ Plan mis à jour vers:', planId);
+    } catch (error) {
+      console.error('❌ Erreur lors de la mise à jour du plan:', error);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -66,7 +145,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !userProfile) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -75,8 +154,34 @@ const Dashboard: React.FC = () => {
     );
   }
 
+
+
   return (
     <div className="space-y-8">
+      {/* Message de correction pour les profils sans abonnement */}
+      {userProfile && !userProfile.subscription && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+          <div className="flex items-start space-x-4">
+            <AlertTriangle className="w-6 h-6 text-orange-500 mt-1 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-orange-800 mb-2">
+                Mise à jour du profil nécessaire
+              </h3>
+              <p className="text-orange-700 mb-4">
+                Votre profil doit être mis à jour pour accéder aux nouvelles fonctionnalités de TropFlow Pro.
+                Cliquez sur le bouton ci-dessous pour effectuer cette mise à jour.
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              >
+                Mettre à jour mon profil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* En-tête avec salutation */}
       <div className="flex justify-between items-center">
         <div>
@@ -96,54 +201,68 @@ const Dashboard: React.FC = () => {
         </Link>
       </div>
 
-      {/* Cartes de statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-              <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+      {/* Grid principal avec statistiques et usage */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Statistiques des déplacements */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Cartes de statistiques */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                  <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total déplacements</h2>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalTrips}</p>
+                </div>
+              </div>
             </div>
-            <div className="ml-4">
-              <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total déplacements</h2>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalTrips}</p>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                  <FileText className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Brouillons</h2>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{draftTrips}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+                  <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Soumis</h2>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{submittedTrips}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                  <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="ml-4">
+                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Payés</h2>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{paidTrips}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-              <FileText className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-            </div>
-            <div className="ml-4">
-              <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Brouillons</h2>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{draftTrips}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-              <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <div className="ml-4">
-              <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Soumis</h2>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{submittedTrips}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-              <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div className="ml-4">
-              <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Payés</h2>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{paidTrips}</p>
-            </div>
-          </div>
+        {/* Statistiques d'usage et plan */}
+        <div className="lg:col-span-1">
+          <UsageStats
+            userProfile={userProfile}
+            onUpgradeClick={handleUpgradeClick}
+          />
         </div>
       </div>
 
@@ -271,6 +390,14 @@ const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal des plans */}
+      <PlanModal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+        userProfile={userProfile}
+        onSelectPlan={handleSelectPlan}
+      />
     </div>
   );
 };

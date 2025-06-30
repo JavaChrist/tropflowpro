@@ -36,7 +36,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
           </div>
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Connectez-vous à votre compte TripFlow
+          Connectez-vous à votre compte TropFlow Pro
         </h2>
         <p className="text-gray-600 mt-2">
           Connectez-vous à votre compte Oktra

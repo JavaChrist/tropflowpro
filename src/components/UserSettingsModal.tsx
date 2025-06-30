@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { X, User, Hash, Save, AlertCircle } from 'lucide-react';
-import useAuth, { UserProfile } from '../hooks/useAuth';
+import useAuth from '../hooks/useAuth';
+import { UserProfile } from '../types';
 
 interface UserSettingsModalProps {
   isOpen: boolean;

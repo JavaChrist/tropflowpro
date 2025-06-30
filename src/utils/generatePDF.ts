@@ -134,7 +134,7 @@ export const formatAmountForPDF = (amount: number): string => {
   }).format(amount);
 };
 
-// Fonction pour générer le contenu HTML d'un PDF style TripFlow (ex-Oktra)
+// Fonction pour générer le contenu HTML d'un PDF style TropFlow Pro (ex-Oktra)
 export const generateExpensePDFContent = (
   expenses: ExpenseItem[],
   options: PDFOptions & {
@@ -325,7 +325,7 @@ export const generateExpensePDFContent = (
         <div class="header">
           <div class="logo">
             <div class="logo-icon"></div>
-            <span class="logo-text">TripFlow</span>
+                          <span class="logo-text">TropFlow Pro</span>
           </div>
           <div class="trip-title">${tripName}</div>
           <div class="trip-info">${destination}${dates ? ` • ${dates}` : ''}</div>

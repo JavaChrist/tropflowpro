@@ -62,7 +62,7 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
     defaultValues: {
       category: initialData?.category || 'transport_long',
       subcategory: initialData?.subcategory || '',
-      amount: initialData?.amount || 0,
+      amount: initialData?.amount,
       isVeloce: initialData?.isVeloce || false,
       isPersonal: initialData?.isPersonal || false,
       date: initialData?.date || new Date().toISOString().split('T')[0]

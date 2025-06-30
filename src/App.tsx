@@ -3,10 +3,12 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import useAuth from './hooks/useAuth';
 import AuthPage from './pages/AuthPage';
 import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
 import TripList from './pages/TripList';
 import CreateTrip from './pages/CreateTrip';
 import TripDetail from './pages/TripDetail';
 import EditTrip from './pages/EditTrip';
+import PaymentSuccess from './pages/PaymentSuccess';
 import LoadingSpinner from './components/LoadingSpinner';
 import { ThemeProvider } from './contexts/ThemeContext';
 import './App.css';
@@ -48,8 +50,8 @@ function App() {
         <div className="App">
           <Layout>
             <Routes>
-              {/* Page d'accueil redirige vers les déplacements */}
-              <Route path="/" element={<Navigate to="/trips" replace />} />
+              {/* Dashboard - Page d'accueil */}
+              <Route path="/" element={<Dashboard />} />
 
               {/* Routes pour les déplacements */}
               <Route path="/trips" element={<TripList />} />
@@ -57,8 +59,11 @@ function App() {
               <Route path="/trips/:id" element={<TripDetail />} />
               <Route path="/trips/:id/edit" element={<EditTrip />} />
 
-              {/* Redirection par défaut vers les déplacements */}
-              <Route path="*" element={<Navigate to="/trips" replace />} />
+              {/* Route pour le retour de paiement Mollie */}
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+
+              {/* Redirection par défaut vers le dashboard */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>
         </div>

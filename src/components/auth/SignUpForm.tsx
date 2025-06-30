@@ -49,7 +49,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
         </div>
         <h2 className="text-3xl font-bold text-gray-900">Créer un compte</h2>
         <p className="text-gray-600 mt-2">
-          Rejoignez TripFlow pour gérer vos frais de déplacement
+          Rejoignez TropFlow Pro pour gérer vos frais de déplacement
         </p>
       </div>
 

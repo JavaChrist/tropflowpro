@@ -1,4 +1,4 @@
-# 🚀 Guide de déploiement TripFlow sur Vercel
+# 🚀 Guide de déploiement TropFlow Pro sur Vercel
 
 ## 📋 Étapes de déploiement
 
@@ -140,7 +140,7 @@ Si problèmes :
 
 ## 🎉 Résultat final
 
-Une fois déployé, TripFlow offre :
+Une fois déployé, TropFlow Pro offre :
 
 - ✅ **Application web responsive** parfaite sur tous appareils
 - ✅ **Emails professionnels complets** avec factures jointes

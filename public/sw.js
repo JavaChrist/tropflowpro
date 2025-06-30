@@ -1,7 +1,7 @@
 /* eslint-env serviceworker */
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = "tripflow-v1";
+const CACHE_NAME = "tropflow-pro-v1";
 const urlsToCache = [
   "/",
   "/static/js/bundle.js",

@@ -42,7 +42,7 @@ const AuthPage: React.FC = () => {
             </h2>
 
             <p className="text-xl text-gray-600 mb-8 max-w-lg mx-auto lg:mx-0">
-              TripFlow vous permet de créer, suivre et soumettre vos notes de frais
+              TropFlow Pro vous permet de créer, suivre et soumettre vos notes de frais
               professionnelles en quelques clics.
             </p>
 

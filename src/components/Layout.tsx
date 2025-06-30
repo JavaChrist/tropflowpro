@@ -7,7 +7,8 @@ import {
   Menu,
   X,
   LogOut,
-  User
+  User,
+  Home
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import UserSettingsModal from './UserSettingsModal';
@@ -27,13 +28,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { userProfile, logout } = useAuth();
 
   const navigation = [
+    { name: 'Tableau de bord', href: '/', icon: Home },
     { name: 'Mes déplacements', href: '/trips', icon: MapPin },
     { name: 'Nouveau déplacement', href: '/trips/new', icon: Plus },
   ];
 
   const isActiveRoute = (href: string) => {
+    if (href === '/') {
+      return location.pathname === '/';
+    }
     if (href === '/trips') {
-      return location.pathname === '/trips' || location.pathname === '/';
+      return location.pathname === '/trips';
     }
     if (href === '/trips/new') {
       return location.pathname === '/trips/new';
@@ -62,9 +67,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center">
+              <Link to="/" className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity">
                 <div className="relative">
-                  {/* Nouveau logo TripFlow */}
+                  {/* Nouveau logo TropFlow Pro */}
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform rotate-12">
                     <div className="flex items-center space-x-0.5">
                       <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full animate-pulse"></div>
@@ -78,10 +83,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </div>
                 </div>
                 <h1 className="ml-2 sm:ml-3 text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
-                  <span className="text-blue-600 dark:text-blue-400">Trip</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">Flow</span>
+                  <span className="text-blue-600 dark:text-blue-400">Trop</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">Flow Pro</span>
                 </h1>
-              </div>
+              </Link>
             </div>
 
             {/* Desktop Navigation */}
@@ -237,7 +242,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12 print:hidden safe-area-bottom">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 safe-area-inset">
           <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-            © {new Date().getFullYear()} TripFlow - Gestionnaire de frais de déplacement
+            © {new Date().getFullYear()} TropFlow Pro - Gestionnaire de frais de déplacement
           </div>
         </div>
       </footer>
@@ -257,7 +262,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         onClose={handleLogoutCancel}
         onConfirm={handleLogoutConfirm}
         title="Se déconnecter"
-        message="Êtes-vous sûr de vouloir vous déconnecter de votre session TripFlow ?"
+        message="Êtes-vous sûr de vouloir vous déconnecter de votre session TropFlow Pro ?"
         type="warning"
         confirmText="Se déconnecter"
         cancelText="Rester connecté"

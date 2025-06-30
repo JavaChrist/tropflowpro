@@ -118,7 +118,7 @@ export const formatTripReportEmail = (tripData: TripEmailData): EmailTemplate =>
     }
     
     Cordialement,
-    TripFlow - Gestionnaire de Notes de Frais
+    TropFlow Pro - Gestionnaire de Notes de Frais
   `;
 
   return { subject, body };
@@ -149,7 +149,7 @@ export const formatExpenseNoteEmail = (expenseNote: ExpenseNote, trip: Trip): Em
     📄 **FACTURE** : ${expenseNote.receiptUrl ? '✓ Jointe en pièce jointe' : '✗ Aucune facture'}
     
     Cordialement,
-    TripFlow - Gestionnaire de Notes de Frais
+    TropFlow Pro - Gestionnaire de Notes de Frais
   `;
 
   return { subject, body };

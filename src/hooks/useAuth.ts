@@ -9,18 +9,21 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
-import { FirebaseService, handleFirestoreError } from '../services/firebaseService';
+import { UserProfile, UserSubscription, PlanType } from '../types';
 
-export interface UserProfile {
-  uid: string;
-  email: string;
-  displayName: string;
-  contractNumber: string;
-  firstName: string;
-  lastName: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Fonction pour créer un abonnement gratuit par défaut
+const createDefaultSubscription = (): UserSubscription => {
+  const now = new Date().toISOString();
+  return {
+    planId: 'free' as PlanType,
+    status: 'active',
+    currentPeriodStart: now,
+    currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 an
+    tripsUsed: 0,
+    createdAt: now,
+    updatedAt: now
+  };
+};
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -61,9 +64,22 @@ export const useAuth = () => {
       const userDoc = await getDoc(doc(db, 'users', uid));
       if (userDoc.exists()) {
         const profileData = userDoc.data() as UserProfile;
-        setUserProfile(profileData);
+
+        // Migration : Si le profil n'a pas d'abonnement, l'ajouter
+        if (!profileData.subscription) {
+          const updatedProfile: UserProfile = {
+            ...profileData,
+            subscription: createDefaultSubscription(),
+            updatedAt: new Date().toISOString()
+          };
+
+          await updateDoc(doc(db, 'users', uid), updatedProfile as any);
+          setUserProfile(updatedProfile);
+        } else {
+          setUserProfile(profileData);
+        }
       } else {
-        // Créer automatiquement le profil manquant
+        // Créer automatiquement le profil manquant avec abonnement gratuit
         const defaultProfile: UserProfile = {
           uid: uid,
           email: firebaseUser?.email || '',
@@ -71,6 +87,7 @@ export const useAuth = () => {
           contractNumber: 'À_RENSEIGNER',
           firstName: firebaseUser?.displayName?.split(' ')[0] || 'Prénom',
           lastName: firebaseUser?.displayName?.split(' ')[1] || 'Nom',
+          subscription: createDefaultSubscription(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
@@ -137,7 +154,7 @@ export const useAuth = () => {
         displayName: `${firstName} ${lastName}`
       });
 
-      // Créer le profil utilisateur dans Firestore
+      // Créer le profil utilisateur dans Firestore avec abonnement gratuit
       const userProfile: UserProfile = {
         uid: user.uid,
         email: user.email!,
@@ -145,11 +162,16 @@ export const useAuth = () => {
         contractNumber,
         firstName,
         lastName,
+        subscription: createDefaultSubscription(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
       await setDoc(doc(db, 'users', user.uid), userProfile);
+
+      // Forcer le rechargement du profil pour s'assurer qu'il est bien sauvegardé
+      await loadUserProfile(user.uid, user);
+
       setUserProfile(userProfile);
 
       return user;
@@ -186,7 +208,7 @@ export const useAuth = () => {
         updatedAt: new Date().toISOString()
       };
 
-      await updateDoc(doc(db, 'users', user.uid), updatedProfile);
+      await updateDoc(doc(db, 'users', user.uid), updatedProfile as any);
 
       // Mettre à jour le nom d'affichage Firebase si nécessaire
       if (updates.firstName || updates.lastName) {
@@ -203,6 +225,42 @@ export const useAuth = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const updateUserSubscription = async (subscription: UserSubscription) => {
+    if (!user || !userProfile) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const updatedProfile: UserProfile = {
+        ...userProfile,
+        subscription,
+        updatedAt: new Date().toISOString()
+      };
+
+      await updateDoc(doc(db, 'users', user.uid), updatedProfile as any);
+      setUserProfile(updatedProfile);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de l\'abonnement:', error);
+      setError('Erreur lors de la mise à jour de l\'abonnement');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const incrementTripsUsed = async () => {
+    if (!user || !userProfile) return;
+
+    const updatedSubscription: UserSubscription = {
+      ...userProfile.subscription,
+      tripsUsed: userProfile.subscription.tripsUsed + 1,
+      updatedAt: new Date().toISOString()
+    };
+
+    await updateUserSubscription(updatedSubscription);
   };
 
   const logout = async () => {
@@ -227,41 +285,12 @@ export const useAuth = () => {
     signIn,
     signUp,
     updateUserProfile,
+    updateUserSubscription,
+    incrementTripsUsed,
     logout,
     clearError,
     isAuthenticated: !!user // Authentifié si Firebase user existe, indépendamment du profil
   };
 };
 
-export default useAuth;
-
-// Fonction pour gérer les erreurs de façon élégante
-const handleAuthError = (error: any, operation: string) => {
-  console.warn(`⚠️ Erreur d'authentification ${operation}:`, error);
-
-  // Vérifier si c'est une erreur de blocage
-  const errorInfo = handleFirestoreError(error, operation);
-
-  if (errorInfo.type === 'network') {
-    console.log('🔍 Problème de réseau détecté lors de l\'authentification');
-    return 'Problème de connexion. Vérifiez votre réseau.';
-  }
-
-  // Autres erreurs d'authentification
-  if (error.code) {
-    switch (error.code) {
-      case 'auth/user-not-found':
-        return 'Utilisateur non trouvé';
-      case 'auth/wrong-password':
-        return 'Mot de passe incorrect';
-      case 'auth/invalid-email':
-        return 'Email invalide';
-      case 'auth/network-request-failed':
-        return 'Problème de réseau';
-      default:
-        return error.message || 'Erreur inconnue';
-    }
-  }
-
-  return error.message || 'Erreur inconnue';
-}; 
+export default useAuth; 

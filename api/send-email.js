@@ -46,7 +46,7 @@ function generateReportHTML(tripData, expenseNotes, totals) {
     </head>
     <body>
       <div class="header">
-        <div class="logo">TripFlow</div>
+        <div class="logo">TropFlow Pro</div>
         <div class="trip-title">Rapport de frais - ${trip.name}</div>
         <div>${trip.destination} • ${new Date(trip.departureDate).toLocaleDateString("fr-FR")} au ${new Date(trip.returnDate).toLocaleDateString("fr-FR")}</div>
       </div>
@@ -172,7 +172,7 @@ export default async function handler(req, res) {
 
     // Préparer l'email
     const emailData = {
-      from: `TripFlow <${process.env.FROM_EMAIL}>`,
+      from: `TropFlow Pro <${process.env.FROM_EMAIL}>`,
       to: [recipientEmail],
       subject: `Rapport de frais - ${tripData.trip.name} (${tripData.trip.destination})`,
       html: reportHTML,

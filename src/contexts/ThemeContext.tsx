@@ -24,13 +24,13 @@ interface ThemeProviderProps {
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     // Récupérer le thème sauvegardé ou utiliser 'light' par défaut
-    const savedTheme = localStorage.getItem('tripflow-theme') as Theme;
+    const savedTheme = localStorage.getItem('tropflow-pro-theme') as Theme;
     return savedTheme || 'light';
   });
 
   useEffect(() => {
     // Sauvegarder le thème dans localStorage
-    localStorage.setItem('tripflow-theme', theme);
+    localStorage.setItem('tropflow-pro-theme', theme);
 
     // Appliquer la classe au document
     const root = document.documentElement;

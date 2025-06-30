@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import TripService from '../services/tripService';
-import { Trip, ExpenseNote, TripSummary } from '../types';
-import { UserProfile } from '../hooks/useAuth';
+import { Trip, ExpenseNote, TripSummary, UserProfile } from '../types';
 
 interface TripStore {
   // État
@@ -100,31 +99,38 @@ const useTripStore = create<TripStore>((set, get) => ({
 
   // Créer un nouveau déplacement
   createTrip: async (tripData: CreateTripData, userProfile: UserProfile): Promise<string> => {
+    const state = get();
     set({ isLoading: true, error: null });
+
     try {
-      const now = new Date().toISOString();
-      const fullTripData: Omit<Trip, 'id'> = {
-        ...tripData,
+      const newTrip: Omit<Trip, 'id'> = {
+        name: tripData.name,
+        destination: tripData.destination,
+        purpose: tripData.purpose,
+        departureDate: tripData.departureDate,
+        returnDate: tripData.returnDate,
+        remarks: tripData.remarks || '',
         userId: userProfile.uid,
         contractNumber: userProfile.contractNumber,
         collaborator: {
           firstName: userProfile.firstName,
-          lastName: userProfile.lastName
+          lastName: userProfile.lastName,
         },
         status: 'draft',
-        createdAt: now,
-        updatedAt: now
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      const tripId = await tripService.createTrip(fullTripData);
+      // Créer le déplacement avec vérification des limites
+      const tripId = await tripService.createTrip(newTrip, userProfile);
 
       // Recharger la liste des déplacements
-      await get().loadTrips(userProfile.uid);
+      await state.loadTrips(userProfile.uid);
 
       set({ isLoading: false });
       return tripId;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création du déplacement';
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création';
       set({ isLoading: false, error: errorMessage });
       throw error;
     }
@@ -156,7 +162,7 @@ const useTripStore = create<TripStore>((set, get) => ({
     }
   },
 
-  // Supprimer un déplacement
+  // Supprimer un déplacement (ne décrémente PAS le compteur)
   deleteTrip: async (tripId: string) => {
     set({ isLoading: true, error: null });
     try {
@@ -168,6 +174,8 @@ const useTripStore = create<TripStore>((set, get) => ({
         currentTripNotes: state.currentTrip?.id === tripId ? [] : state.currentTripNotes,
         isLoading: false
       }));
+
+      console.log('🗑️ Déplacement supprimé (compteur inchangé):', tripId);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la suppression du déplacement';
       set({ isLoading: false, error: errorMessage });

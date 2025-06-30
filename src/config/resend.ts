@@ -4,7 +4,7 @@ export const EMAIL_CONFIG = {
   FROM_EMAIL: 'noreply@javachrist.fr',
 
   // Nom d'expéditeur
-  FROM_NAME: 'TripFlow - Gestionnaire de Notes de Frais',
+  FROM_NAME: 'TropFlow Pro - Gestionnaire de Notes de Frais',
 
   // URL de l'API (automatiquement détectée)
   API_URL: '/api/send-email'

@@ -51,16 +51,7 @@ const TripReportActions: React.FC<TripReportActionsProps> = ({
       const success = await sendTripReport(recipientEmail, tripData);
 
       if (success) {
-        const isProduction = window.location.hostname !== 'localhost';
-        const message = isProduction
-          ? `✅ Email envoyé avec succès à ${recipientEmail} !
-             📧 Rapport PDF professionnel généré
-             📎 ${notesWithReceipts} facture(s) jointe(s) en pièces jointes`
-          : `✅ Email simulé avec succès pour ${recipientEmail} !
-             📧 Rapport: ${expenseNotes.length} note(s) de frais
-             🔗 Factures: ${notesWithReceipts} lien(s) inclus (mode développement)`;
-
-        onSuccess?.(message);
+        // Email envoyé avec succès - pas de message de confirmation
         setRecipientEmail('');
       } else {
         onError?.('❌ Erreur lors de l\'envoi de l\'email');

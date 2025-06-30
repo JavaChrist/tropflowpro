@@ -71,7 +71,7 @@ const InstallButton: React.FC = () => {
     <button
       onClick={handleInstallClick}
       className="fixed bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white p-2 sm:p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-105 z-40"
-      title="Installer TripFlow sur votre appareil"
+      title="Installer TropFlow Pro sur votre appareil"
     >
       <div className="flex items-center">
         <Smartphone className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />

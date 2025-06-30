@@ -1,10 +1,10 @@
-# 🚀 TripFlow
+# 🚀 TropFlow Pro
 
 **Gestionnaire de frais de déplacement professionnel moderne et intelligent**
 
-TripFlow est une application web complète pour gérer, suivre et soumettre vos notes de frais de déplacement professionnel. Conçue avec une architecture robuste et une interface utilisateur intuitive.
+TropFlow Pro est une application web complète pour gérer, suivre et soumettre vos notes de frais de déplacement professionnel. Conçue avec une architecture robuste et une interface utilisateur intuitive.
 
-![TripFlow](https://img.shields.io/badge/TripFlow-v1.0.0-blue?style=for-the-badge)
+![TropFlow Pro](https://img.shields.io/badge/TropFlow%20Pro-v1.0.0-blue?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript)
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase)
@@ -93,8 +93,8 @@ TripFlow est une application web complète pour gérer, suivre et soumettre vos 
 
 ```bash
 # Cloner le repository
-git clone https://github.com/votre-username/tripflow.git
-cd tripflow
+git clone https://github.com/votre-username/tropflow-pro.git
+cd tropflow-pro
 
 # Installer les dépendances
 npm install
@@ -141,7 +141,7 @@ FROM_EMAIL=noreply@votre-domaine.com
 ## 📋 Structure du projet
 
 ```
-TripFlow/
+TropFlow-Pro/
 ├── public/              # Fichiers publics et PWA
 ├── src/
 │   ├── components/      # Composants réutilisables
@@ -247,7 +247,7 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 🆘 Support
 
-- **Issues** : [GitHub Issues](https://github.com/votre-username/tripflow/issues)
+- **Issues** : [GitHub Issues](https://github.com/votre-username/tropflow-pro/issues)
 - **Documentation** : Ce README + commentaires dans le code
 - **Email** : support@votre-domaine.com
 

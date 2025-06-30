@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { FirebaseService } from '../services/firebaseService';
-import { UserProfile } from '../hooks/useAuth';
+import { UserProfile } from '../types';
 
 export interface ExpenseItem {
   id: string;

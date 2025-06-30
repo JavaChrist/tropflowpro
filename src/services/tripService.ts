@@ -11,23 +11,75 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Trip, ExpenseNote, TripSummary } from '../types';
+import { Trip, ExpenseNote, TripSummary, UserProfile, canCreateTrip } from '../types';
+
+// Erreur personnalisée pour les limitations de plan
+export class PlanLimitError extends Error {
+  constructor(message: string, public remainingTrips: number, public maxTrips: number) {
+    super(message);
+    this.name = 'PlanLimitError';
+  }
+}
 
 export class TripService {
   private tripsCollection = 'trips';
   private notesCollection = 'expenseNotes';
 
-  // Créer un nouveau déplacement
-  async createTrip(tripData: Omit<Trip, 'id'>): Promise<string> {
+  // Vérifier si l'utilisateur peut créer un nouveau déplacement
+  private async checkTripCreationLimit(userProfile: UserProfile): Promise<void> {
+    const canCreate = canCreateTrip(userProfile.subscription);
+
+    if (!canCreate) {
+      const plan = userProfile.subscription.planId === 'free' ? 10 : -1;
+      const tripsUsed = userProfile.subscription.tripsUsed;
+
+      throw new PlanLimitError(
+        `Limite de déplacements atteinte (${tripsUsed}/${plan}). Passez au plan Pro pour des déplacements illimités.`,
+        Math.max(0, plan - tripsUsed),
+        plan
+      );
+    }
+  }
+
+  // Compter le nombre de déplacements de l'utilisateur
+  private async getUserTripsCount(userId: string): Promise<number> {
     try {
+      const q = query(
+        collection(db, this.tripsCollection),
+        where('userId', '==', userId)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.size;
+    } catch (error) {
+      console.error('Erreur lors du comptage des déplacements:', error);
+      return 0;
+    }
+  }
+
+  // Créer un nouveau déplacement avec vérification des limites
+  async createTrip(tripData: Omit<Trip, 'id'>, userProfile: UserProfile): Promise<string> {
+    try {
+      // 1. Vérifier les limites du plan
+      await this.checkTripCreationLimit(userProfile);
+
+      // 2. Créer le déplacement
       const docRef = await addDoc(collection(db, this.tripsCollection), {
         ...tripData,
         createdAt: Timestamp.fromDate(new Date(tripData.createdAt)),
         updatedAt: Timestamp.fromDate(new Date(tripData.updatedAt))
       });
+
+      console.log('✅ Nouveau déplacement créé:', docRef.id);
+      console.log('📊 Plan utilisateur:', userProfile.subscription.planId);
+
       return docRef.id;
     } catch (error) {
-      console.error('Erreur lors de la création du déplacement:', error);
+      if (error instanceof PlanLimitError) {
+        console.warn('🚫 Limite de plan atteinte:', error.message);
+        throw error;
+      }
+
+      console.error('❌ Erreur lors de la création du déplacement:', error);
       throw error;
     }
   }
@@ -172,6 +224,8 @@ export class TripService {
       // Supprimer le déplacement
       const tripRef = doc(db, this.tripsCollection, tripId);
       await deleteDoc(tripRef);
+
+      console.log('🗑️ Déplacement supprimé:', tripId);
     } catch (error) {
       console.error('Erreur lors de la suppression du déplacement:', error);
       throw error;
@@ -239,6 +293,24 @@ export class TripService {
       await deleteDoc(noteRef);
     } catch (error) {
       console.error('Erreur lors de la suppression de la note:', error);
+      throw error;
+    }
+  }
+
+  // Méthodes utilitaires pour les statistiques d'usage
+  async getUserTripsCountForStats(userId: string): Promise<number> {
+    return this.getUserTripsCount(userId);
+  }
+
+  // Vérifier si l'utilisateur peut créer un déplacement (méthode publique)
+  async canUserCreateTrip(userProfile: UserProfile): Promise<boolean> {
+    try {
+      await this.checkTripCreationLimit(userProfile);
+      return true;
+    } catch (error) {
+      if (error instanceof PlanLimitError) {
+        return false;
+      }
       throw error;
     }
   }
