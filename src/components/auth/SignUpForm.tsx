@@ -18,62 +18,70 @@ interface SignUpFormData {
 
 const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { signUp, isLoading, error, clearError } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<SignUpFormData>();
-  const watchPassword = watch('password');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    reset,
+  } = useForm<SignUpFormData>();
+
+  const password = watch('password');
 
   const onSubmit = async (data: SignUpFormData) => {
+    if (data.password !== data.confirmPassword) {
+      alert('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      clearError();
-      await signUp(
-        data.email,
-        data.password,
-        data.firstName,
-        data.lastName,
-        data.contractNumber
-      );
-    } catch (error) {
-      // L'erreur est gérée par le hook useAuth
+      await signUp(data.email, data.password, data.firstName, data.lastName, data.contractNumber);
+      reset();
+    } catch (error: any) {
+      console.error('Erreur lors de l\'inscription:', error);
+      alert(error.message || 'Erreur lors de l\'inscription');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <div className="relative mx-auto w-16 h-16 mb-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
-            <UserPlus className="h-8 w-8 text-white" />
-          </div>
-        </div>
-        <h2 className="text-3xl font-bold text-gray-900">Créer un compte</h2>
-        <p className="text-gray-600 mt-2">
-          Rejoignez TropFlow Pro pour gérer vos frais de déplacement
-        </p>
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8">
+        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-600">Création de votre compte...</p>
       </div>
+    );
+  }
 
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
+  return (
+    <div className="auth-form">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Informations personnelles */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="text-center mb-8">
+          <UserPlus className="mx-auto h-12 w-12 text-green-600 mb-4" />
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Créer un compte</h2>
+          <p className="text-gray-600">Rejoignez TropFlow Pro dès aujourd'hui</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <User className="inline h-4 w-4 mr-2" />
+            <label htmlFor="firstName" className="flex items-center text-sm font-medium text-gray-700 mb-2">
+              <User className="h-4 w-4 mr-2" />
               Prénom
             </label>
             <input
+              id="firstName"
               type="text"
+              inputMode="text"
+              autoComplete="given-name"
+              spellCheck={false}
+              autoCapitalize="words"
+              autoCorrect="on"
+              data-form-type="text"
               {...register('firstName', {
                 required: 'Le prénom est obligatoire'
               })}
@@ -81,16 +89,27 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
               placeholder="Jean"
             />
             {errors.firstName && (
-              <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                {errors.firstName.message}
+              </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="lastName" className="flex items-center text-sm font-medium text-gray-700 mb-2">
+              <User className="h-4 w-4 mr-2" />
               Nom
             </label>
             <input
+              id="lastName"
               type="text"
+              inputMode="text"
+              autoComplete="family-name"
+              spellCheck={false}
+              autoCapitalize="words"
+              autoCorrect="on"
+              data-form-type="text"
               {...register('lastName', {
                 required: 'Le nom est obligatoire'
               })}
@@ -98,19 +117,28 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
               placeholder="Dupont"
             />
             {errors.lastName && (
-              <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                {errors.lastName.message}
+              </p>
             )}
           </div>
         </div>
 
-        {/* Numéro de contrat */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <Hash className="inline h-4 w-4 mr-2" />
+          <label htmlFor="contractNumber" className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <Hash className="h-4 w-4 mr-2" />
             Numéro de contrat
           </label>
           <input
+            id="contractNumber"
             type="text"
+            inputMode="text"
+            autoComplete="off"
+            spellCheck={false}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            data-form-type="text"
             {...register('contractNumber', {
               required: 'Le numéro de contrat est obligatoire'
             })}
@@ -118,45 +146,60 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
             placeholder="CNT-2024-001"
           />
           {errors.contractNumber && (
-            <p className="mt-1 text-sm text-red-600">{errors.contractNumber.message}</p>
+            <p className="mt-1 text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.contractNumber.message}
+            </p>
           )}
-          <p className="mt-1 text-xs text-gray-500">
-            Ce numéro sera utilisé pour toutes vos notes de frais
-          </p>
         </div>
 
-        {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <Mail className="inline h-4 w-4 mr-2" />
-            Adresse email
+          <label htmlFor="email" className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <Mail className="h-4 w-4 mr-2" />
+            Email professionnel
           </label>
           <input
+            id="email"
             type="email"
+            inputMode="email"
+            autoComplete="email"
+            spellCheck={false}
+            autoCapitalize="none"
+            autoCorrect="off"
+            data-form-type="email"
             {...register('email', {
               required: 'L\'email est obligatoire',
               pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                message: 'Adresse email invalide'
+                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                message: 'Email invalide'
               }
             })}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
             placeholder="votre@email.com"
           />
           {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+            <p className="mt-1 text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.email.message}
+            </p>
           )}
         </div>
 
-        {/* Mot de passe */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <Lock className="inline h-4 w-4 mr-2" />
+          <label htmlFor="password" className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <Lock className="h-4 w-4 mr-2" />
             Mot de passe
           </label>
           <div className="relative">
             <input
+              id="password"
               type={showPassword ? 'text' : 'password'}
+              inputMode="text"
+              autoComplete="new-password"
+              spellCheck={false}
+              autoCapitalize="none"
+              autoCorrect="off"
+              data-form-type="password"
               {...register('password', {
                 required: 'Le mot de passe est obligatoire',
                 minLength: {
@@ -170,71 +213,65 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+            <p className="mt-1 text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.password.message}
+            </p>
           )}
         </div>
 
-        {/* Confirmation mot de passe */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="confirmPassword" className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <Lock className="h-4 w-4 mr-2" />
             Confirmer le mot de passe
           </label>
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              {...register('confirmPassword', {
-                required: 'Veuillez confirmer votre mot de passe',
-                validate: value => value === watchPassword || 'Les mots de passe ne correspondent pas'
-              })}
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
-              placeholder="••••••••"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-            </button>
-          </div>
+          <input
+            id="confirmPassword"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="new-password"
+            {...register('confirmPassword', {
+              required: 'Veuillez confirmer votre mot de passe',
+              validate: (value) => value === password || 'Les mots de passe ne correspondent pas'
+            })}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+            placeholder="••••••••"
+          />
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+            <p className="mt-1 text-sm text-red-600 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.confirmPassword.message}
+            </p>
           )}
         </div>
 
         <button
           type="submit"
-          disabled={isLoading}
-          className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+          className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors font-medium flex items-center justify-center"
         >
-          {isLoading ? (
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Création du compte...
-            </div>
-          ) : (
-            'Créer mon compte'
-          )}
+          <UserPlus className="h-5 w-5 mr-2" />
+          Créer mon compte
         </button>
-      </form>
 
-      <div className="mt-6 text-center">
-        <p className="text-gray-600">
-          Déjà un compte ?{' '}
+        <div className="text-center">
           <button
+            type="button"
             onClick={onToggleMode}
-            className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+            className="text-green-600 hover:text-green-700 font-medium transition-colors"
           >
-            Se connecter
+            Déjà un compte ? Se connecter
           </button>
-        </p>
-      </div>
+        </div>
+      </form>
     </div>
   );
 };

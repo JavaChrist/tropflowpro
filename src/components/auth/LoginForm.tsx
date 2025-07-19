@@ -12,6 +12,8 @@ interface LoginFormData {
   password: string;
 }
 
+
+
 const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
   const [showPassword, setShowPassword] = useState(false);
   const { signIn, isLoading, error, clearError } = useAuth();
@@ -51,7 +53,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 auth-form">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <Mail className="inline h-4 w-4 mr-2" />
@@ -59,6 +61,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
           </label>
           <input
             type="email"
+            inputMode="email"
+            autoComplete="email"
+            spellCheck={false}
+            autoCapitalize="none"
+            autoCorrect="off"
+            data-form-type="email"
+
             {...register('email', {
               required: 'L\'email est obligatoire',
               pattern: {
@@ -82,6 +91,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
+              inputMode="text"
+              autoComplete="current-password"
+              spellCheck={false}
+              autoCapitalize="none"
+              autoCorrect="off"
+              data-form-type="password"
+
               {...register('password', {
                 required: 'Le mot de passe est obligatoire',
                 minLength: {
