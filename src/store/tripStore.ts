@@ -265,6 +265,7 @@ const useTripStore = create<TripStore>((set, get) => ({
         updatedAt: now
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const noteId = await tripService.createExpenseNote(fullNoteData);
 
       // Recharger le déplacement avec ses notes

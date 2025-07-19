@@ -1,6 +1,6 @@
 import { ExpenseNote, Trip } from '../types';
 import { ReceiptAttachment, fetchAllReceipts } from './generatePDF';
-import { sendEmailViaAPI, EMAIL_CONFIG, isEmailConfigured } from '../config/resend';
+import { EMAIL_CONFIG, isEmailConfigured } from '../config/resend';
 
 // Types pour les emails
 export interface EmailData {
@@ -185,8 +185,7 @@ export const createTripReportEmail = async (
 
   // SOLUTION CORS: Ne pas télécharger les factures, juste envoyer les liens
   // Les factures sont accessibles via leurs URLs Firebase publiques
-  console.log('📧 Email sans pièces jointes (problème CORS contourné)');
-  console.log('🔗 Les factures seront accessibles via leurs liens dans l\'email');
+
 
   return {
     to: recipientEmail,

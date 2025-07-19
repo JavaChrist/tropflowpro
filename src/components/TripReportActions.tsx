@@ -105,6 +105,7 @@ const TripReportActions: React.FC<TripReportActionsProps> = ({
     setShowReceiptsModal(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDownloadPDF = async () => {
     if (!trip || expenseNotes.length === 0) {
       setAlert({

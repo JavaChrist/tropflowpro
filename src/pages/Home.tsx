@@ -15,7 +15,7 @@ const Home: React.FC = () => {
   });
 
   const handleExpenseSubmit = (expense: ExpenseData) => {
-    console.log('Nouvelle dépense:', expense);
+
     // Ici vous pourrez ajouter la logique pour sauvegarder la dépense
     setAlertModal({
       isOpen: true,

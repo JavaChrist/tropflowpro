@@ -100,31 +100,7 @@ export class PlanService {
     }).format(price);
   }
 
-  // Vérifier si l'utilisateur est éligible à une période d'essai
-  static isEligibleForTrial(userProfile: UserProfile): boolean {
-    // Éligible si nouveau compte (moins de 7 jours) et jamais eu de plan premium
-    const accountAge = Date.now() - new Date(userProfile.createdAt).getTime();
-    const isNewAccount = accountAge < 7 * 24 * 60 * 60 * 1000; // 7 jours
-    const neverHadPremium = userProfile.subscription.planId === 'free';
-
-    return isNewAccount && neverHadPremium;
-  }
-
-  // Créer un abonnement d'essai
-  static createTrialSubscription(planId: PlanType): UserSubscription {
-    const now = new Date();
-    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // 14 jours
-
-    return {
-      planId,
-      status: 'trialing',
-      currentPeriodStart: now.toISOString(),
-      currentPeriodEnd: trialEnd.toISOString(),
-      tripsUsed: 0,
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString()
-    };
-  }
+  // Plus d'essai gratuit - supprimé pour simplifier
 
   // Créer un abonnement payant avec Mollie
   static createPaidSubscription(
@@ -154,6 +130,22 @@ export class PlanService {
     const subscriptionId = `sub_${Math.random().toString(36).substring(2, 15)}`;
 
     return { customerId, subscriptionId };
+  }
+
+  // Créer un abonnement gratuit (pour reset ou nouveau compte)
+  static createFreeSubscription(): UserSubscription {
+    const now = new Date();
+    const nextYear = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+
+    return {
+      planId: 'free',
+      status: 'active',
+      currentPeriodStart: now.toISOString(),
+      currentPeriodEnd: nextYear.toISOString(), // Gratuit pour 1 an
+      tripsUsed: 0,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString()
+    };
   }
 
   // Obtenir l'URL de checkout Mollie (à implémenter avec l'API)

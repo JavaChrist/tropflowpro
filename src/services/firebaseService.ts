@@ -8,7 +8,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   Timestamp
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -97,7 +96,7 @@ export class FirebaseService {
         } as ExpenseReport;
       });
 
-      console.log('📋 Rapports trouvés:', reports.length);
+
       // Tri côté client par date de mise à jour
       return reports.sort((a, b) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()

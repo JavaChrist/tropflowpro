@@ -119,7 +119,7 @@ const ExpenseList: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">Mes notes de frais</h1>
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 truncate">Mes notes de frais</h1>
           <p className="mt-1 text-sm text-gray-500">
             Gérez et suivez toutes vos notes de frais de déplacement
           </p>

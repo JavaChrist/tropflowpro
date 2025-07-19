@@ -54,65 +54,48 @@ const Dashboard: React.FC = () => {
     try {
       if (planId === 'free') {
         // Rétrogradation vers le plan gratuit
-        const freeSubscription = {
-          ...userProfile.subscription,
-          planId,
-          status: 'active' as const,
-          updatedAt: new Date().toISOString()
-        };
+        const freeSubscription = PlanService.createFreeSubscription();
         await updateUserSubscription(freeSubscription);
       } else {
         // Upgrade vers un plan premium
-        if (PlanService.isEligibleForTrial(userProfile)) {
-          // Créer un abonnement d'essai
-          const trialSubscription = PlanService.createTrialSubscription(planId);
-          await updateUserSubscription(trialSubscription);
-          console.log('🎉 Période d\'essai activée pour', planId);
-        } else {
-          // Redirection vers Mollie pour le paiement
-          console.log('🔗 Redirection vers Mollie pour', planId);
 
-          try {
-            const response = await fetch('/api/mollie-payment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                action: 'create-checkout',
-                planId: planId,
-                userEmail: userProfile.email,
-                userId: userProfile.uid,
-                returnUrl: `${window.location.origin}/payment/success?plan=${planId}`,
-                webhookUrl: `${window.location.origin}/api/mollie-payment?webhook=true`
-              })
-            });
+        try {
+          const response = await fetch('/api/mollie-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              action: 'create-checkout',
+              planId: planId,
+              userEmail: userProfile.email,
+              userId: userProfile.uid,
+              returnUrl: `${window.location.origin}/payment/success?plan=${planId}`,
+              webhookUrl: `${window.location.origin}/api/mollie-payment?webhook=true`
+            })
+          });
 
-            const result = await response.json();
+          const result = await response.json();
 
-            if (result.success) {
-              // Rediriger vers la page de paiement Mollie
-              window.location.href = result.checkoutUrl;
-            } else {
-              throw new Error(result.error || 'Erreur lors de la création du checkout');
-            }
-          } catch (error) {
-            console.error('❌ Erreur checkout Mollie:', error);
-
-            // Fallback: simulation pour les tests
-            const mollieIds = PlanService.generateMollieTestIds();
-            const paidSubscription = PlanService.createPaidSubscription(
-              planId,
-              mollieIds.customerId,
-              mollieIds.subscriptionId
-            );
-            await updateUserSubscription(paidSubscription);
-            console.log('🧪 Simulation paiement Mollie activée');
+          if (result.success) {
+            window.location.href = result.checkoutUrl;
+          } else {
+            console.error('Échec API Mollie:', result);
+            throw new Error(result.error || 'Erreur lors de la création du checkout');
           }
+        } catch (error) {
+          console.error('Erreur checkout Mollie:', error);
+
+          if (error instanceof Error && error.message.includes('Failed to fetch')) {
+            alert('Erreur de connexion. Vérifiez votre connexion internet.');
+          } else {
+            alert('Erreur lors de la création du paiement. Veuillez réessayer.');
+          }
+          return;
         }
       }
 
-      console.log('✅ Plan mis à jour vers:', planId);
+
     } catch (error) {
       console.error('❌ Erreur lors de la mise à jour du plan:', error);
     }
@@ -185,7 +168,7 @@ const Dashboard: React.FC = () => {
       {/* En-tête avec salutation */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             Bonjour {userProfile?.firstName} 👋
           </h1>
           <p className="text-gray-600 dark:text-gray-300 mt-1">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Trash2, CheckCircle, LogOut, Send, X } from 'lucide-react';
+import { AlertTriangle, Trash2, CheckCircle, Send, X } from 'lucide-react';
 
 interface ConfirmModalProps {
   isOpen: boolean;

@@ -71,8 +71,7 @@ export const TestScenarios = {
 
 // Tests de fonctionnalités
 export const runPlanTests = () => {
-  console.log('🧪 Tests des plans TropFlow Pro');
-  console.log('================================');
+
 
   // Test 1: Utilisateur gratuit peut créer des déplacements
   const freeUser = TestScenarios.freeUser5Trips();
@@ -89,10 +88,8 @@ export const runPlanTests = () => {
   const canCreatePro = PlanService.canUserCreateTrip(proUser);
   console.log(`✅ Utilisateur Pro (25/∞) peut créer: ${canCreatePro}`);
 
-  // Test 4: Éligibilité à l'essai
-  const newUser = TestScenarios.newUserTrialEligible();
-  const isEligibleTrial = PlanService.isEligibleForTrial(newUser);
-  console.log(`✅ Nouvel utilisateur éligible essai: ${isEligibleTrial}`);
+  // Test 4: Plus d'essai gratuit (supprimé)
+  // console.log('✅ Plus d\'essai gratuit - système simplifié');
 
   // Test 5: Messages de limitation
   const limitMessage = PlanService.getLimitationMessage(freeUserLimit);
@@ -190,10 +187,12 @@ export const performanceTests = () => {
 };
 
 // Export par défaut pour les tests rapides
-export default {
+const planTestUtils = {
   TestScenarios,
   runPlanTests,
   simulateUpgradeWorkflow,
   performanceTests,
   createTestUserProfile
-}; 
+};
+
+export default planTestUtils; 

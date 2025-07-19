@@ -11,75 +11,80 @@ const PaymentSuccess: React.FC = () => {
   const { userProfile, updateUserSubscription } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    const processPayment = async () => {
+    const simulatePaymentVerification = async (paymentId: string, planId: PlanType) => {
       try {
-        // Récupérer les paramètres de l'URL
-        const paymentId = searchParams.get('payment_id');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const mollieIds = PlanService.generateMollieTestIds();
+        const paidSubscription = PlanService.createPaidSubscription(
+          planId,
+          mollieIds.customerId,
+          mollieIds.subscriptionId
+        );
+
+        await updateUserSubscription(paidSubscription);
+
+        setStatus('success');
+        setMessage(`Votre abonnement ${planId === 'pro_individual' ? 'Pro Individuel' : 'Pro Entreprise'} a été activé avec succès !`);
+
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
+
+      } catch (error) {
+        console.error('Erreur lors de la création de l\'abonnement:', error);
+        setStatus('error');
+        setMessage('Erreur lors de l\'activation de votre abonnement');
+      }
+    };
+
+        const processPayment = async () => {
+      if (isProcessing) return;
+
+      try {
+        setIsProcessing(true);
+        
+        const paymentId = searchParams.get('id') || searchParams.get('payment_id');
         const planId = searchParams.get('plan') as PlanType;
 
-        if (!paymentId || !planId || !userProfile) {
-          throw new Error('Paramètres de paiement manquants');
+        if (!paymentId && !planId) {
+          setStatus('error');
+          setMessage('Accès direct non autorisé. Veuillez effectuer un paiement d\'abord.');
+          return;
         }
 
-        console.log('🔄 Traitement du retour de paiement Mollie:', {
-          paymentId,
-          planId,
-          userId: userProfile.uid
-        });
+        if (!userProfile) return;
 
-        // En mode réel, vous devriez vérifier le statut du paiement via l'API
-        // Pour l'instant, on simule un paiement réussi
+        if (!paymentId || !planId) {
+          console.error('Paramètres Mollie manquants');
+          setStatus('error');
+          setMessage('Retour de paiement invalide. Paramètres manquants.');
+          return;
+        }
+
         await simulatePaymentVerification(paymentId, planId);
 
       } catch (error) {
-        console.error('❌ Erreur traitement paiement:', error);
+        console.error('Erreur traitement paiement:', error);
         setStatus('error');
         setMessage(error instanceof Error ? error.message : 'Erreur lors du traitement du paiement');
+      } finally {
+        setIsProcessing(false);
       }
     };
 
     processPayment();
-  }, [searchParams, userProfile, updateUserSubscription]);
-
-  const simulatePaymentVerification = async (paymentId: string, planId: PlanType) => {
-    try {
-      // Simulation d'une vérification de paiement
-      console.log('🧪 Simulation vérification paiement Mollie...');
-
-      // Attendre un peu pour simuler l'appel API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Générer des IDs Mollie réalistes
-      const mollieIds = PlanService.generateMollieTestIds();
-
-      // Créer l'abonnement premium
-      const paidSubscription = PlanService.createPaidSubscription(
-        planId,
-        mollieIds.customerId,
-        mollieIds.subscriptionId
-      );
-
-      // Mettre à jour le profil utilisateur
-      await updateUserSubscription(paidSubscription);
-
-      console.log('✅ Abonnement activé:', {
-        planId: planId,
-        customerId: mollieIds.customerId,
-        subscriptionId: mollieIds.subscriptionId
-      });
-
-      setStatus('success');
-      setMessage(`Votre abonnement ${PlanService.getPlan(planId)?.name} a été activé avec succès !`);
-
-    } catch (error) {
-      throw error;
-    }
-  };
+  }, [searchParams, userProfile, updateUserSubscription, navigate, isProcessing]); // Toutes les dépendances incluses
 
   const handleContinue = () => {
-    navigate('/dashboard');
+    navigate('/');
+  };
+
+  const handleRetryPayment = () => {
+    navigate('/');
   };
 
   const getPlanName = () => {
@@ -115,21 +120,29 @@ const PaymentSuccess: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               Erreur de paiement
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {message}
-            </p>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+              <p className="text-red-800 dark:text-red-300 font-medium mb-2">
+                {message}
+              </p>
+              {message.includes('Paramètres de paiement manquants') && (
+                <p className="text-red-700 dark:text-red-400 text-sm">
+                  Il semble que le processus de paiement Mollie n'ait pas été complété correctement.
+                  Veuillez réessayer ou contacter le support.
+                </p>
+              )}
+            </div>
             <div className="space-y-3">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/')}
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Retour au tableau de bord
               </button>
               <button
-                onClick={() => window.location.reload()}
+                onClick={handleRetryPayment}
                 className="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors"
               >
-                Réessayer
+                Réessayer le paiement
               </button>
             </div>
           </div>

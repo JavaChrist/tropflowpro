@@ -104,6 +104,19 @@ async function createCheckout(
       },
     });
 
+    // Mettre à jour l'URL de retour pour inclure le payment ID
+    const finalReturnUrl = new URL(
+      returnUrl || `${req.headers.origin}/payment/success`
+    );
+    finalReturnUrl.searchParams.set("id", payment.id);
+
+    console.log("🔗 URL de retour avec payment ID:", finalReturnUrl.toString());
+
+    // Mettre à jour le paiement avec la nouvelle URL de retour
+    await mollieClient.payments.update(payment.id, {
+      redirectUrl: finalReturnUrl.toString(),
+    });
+
     console.log("✅ Checkout Mollie créé:", {
       paymentId: payment.id,
       planId: planId,

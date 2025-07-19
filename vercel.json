@@ -2,6 +2,9 @@
   "functions": {
     "api/send-email.js": {
       "maxDuration": 30
+    },
+    "api/mollie-payment.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [

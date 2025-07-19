@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info, AlertCircle, CheckCircle, XCircle, X, Camera } from 'lucide-react';
+import { Info, AlertCircle, CheckCircle, XCircle, X } from 'lucide-react';
 
 interface AlertModalProps {
   isOpen: boolean;

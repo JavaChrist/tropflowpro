@@ -4,18 +4,18 @@
   "description": "Gérez vos notes de frais de déplacement professionnel simplement et efficacement",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "favicon.ico?v=2",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
-      "src": "logo192.png",
+      "src": "logo192.png?v=2",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "maskable any"
     },
     {
-      "src": "logo512.png",
+      "src": "logo512.png?v=2",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "maskable any"
@@ -35,14 +35,14 @@
       "short_name": "Nouveau",
       "description": "Créer un nouveau déplacement",
       "url": "/trips/new",
-      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "logo192.png?v=2", "sizes": "192x192" }]
     },
     {
       "name": "Mes déplacements",
       "short_name": "Déplacements",
       "description": "Voir tous mes déplacements",
       "url": "/trips",
-      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "logo192.png?v=2", "sizes": "192x192" }]
     }
   ]
 }

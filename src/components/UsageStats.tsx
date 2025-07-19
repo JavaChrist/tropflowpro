@@ -123,13 +123,13 @@ const UsageStats: React.FC<UsageStatsProps> = ({
           </div>
         </div>
 
-        {!isPremium && showUpgradePrompt && (
+        {showUpgradePrompt && (
           <button
             onClick={onUpgradeClick}
             className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
           >
             <Crown className="w-4 h-4" />
-            <span>Mettre à niveau</span>
+            <span>{isPremium ? 'Gérer le plan' : 'Mettre à niveau'}</span>
           </button>
         )}
       </div>

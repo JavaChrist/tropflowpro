@@ -16,7 +16,6 @@ const PlanModal: React.FC<PlanModalProps> = ({
   userProfile,
   onSelectPlan
 }) => {
-  const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -65,7 +64,13 @@ const PlanModal: React.FC<PlanModalProps> = ({
     return planId === userProfile.subscription.planId;
   };
 
-  const isEligibleForTrial = PlanService.isEligibleForTrial(userProfile);
+  const canChangeToPlan = (planId: PlanType) => {
+    // On peut toujours changer vers le plan gratuit
+    if (planId === 'free') return true;
+
+    // On peut changer vers un plan différent de l'actuel
+    return planId !== userProfile.subscription.planId;
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -95,9 +100,7 @@ const PlanModal: React.FC<PlanModalProps> = ({
             {AVAILABLE_PLANS.map((plan: PlanFeatures) => (
               <div
                 key={plan.id}
-                className={`relative rounded-xl p-6 transition-all duration-200 hover:shadow-lg ${getPlanColor(plan.id)
-                  } ${isCurrentPlan(plan.id) ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''} ${plan.popular ? 'ring-2 ring-orange-400' : ''
-                  }`}
+                className={`relative rounded-xl p-6 transition-all duration-200 hover:shadow-lg flex flex-col h-full ${getPlanColor(plan.id)} ${isCurrentPlan(plan.id) ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''} ${plan.popular ? 'ring-2 ring-orange-400' : ''}`}
               >
                 {/* Popular Badge */}
                 {plan.popular && (
@@ -142,7 +145,7 @@ const PlanModal: React.FC<PlanModalProps> = ({
                 </div>
 
                 {/* Features */}
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-3 mb-6 flex-grow">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
                       <Check className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
@@ -156,45 +159,71 @@ const PlanModal: React.FC<PlanModalProps> = ({
                 {/* Action Button */}
                 <div className="mt-auto">
                   {isCurrentPlan(plan.id) ? (
-                    <button
-                      disabled
-                      className="w-full py-3 px-4 bg-gray-200 text-gray-500 rounded-lg font-medium cursor-not-allowed"
-                    >
-                      Plan actuel
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleSelectPlan(plan.id)}
-                      disabled={isLoading}
-                      className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${plan.id === 'free'
-                        ? 'bg-green-500 hover:bg-green-600 text-white'
-                        : plan.popular
-                          ? 'bg-orange-400 hover:bg-orange-500 text-white'
-                          : 'bg-blue-500 hover:bg-blue-600 text-white'
-                        } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {isLoading ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                          Chargement...
-                        </div>
-                      ) : (
-                        <>
-                          {plan.id === 'free' ? 'Choisir gratuit' :
-                            isEligibleForTrial ? 'Essai gratuit 14 jours' :
-                              'Mettre à niveau'}
-                        </>
+                    <div className="space-y-2">
+                      <button
+                        disabled
+                        className="w-full py-3 px-4 bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg font-medium cursor-not-allowed min-h-[3rem] flex items-center justify-center"
+                      >
+                        <span className="flex items-center">
+                          <Check className="w-4 h-4 mr-2" />
+                          Plan actuel activé
+                        </span>
+                      </button>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                        Vous utilisez actuellement ce plan
+                      </p>
+                    </div>
+                  ) : canChangeToPlan(plan.id) ? (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => handleSelectPlan(plan.id)}
+                        disabled={isLoading}
+                        className={`w-full py-3 px-4 rounded-lg font-medium transition-colors min-h-[3rem] flex items-center justify-center ${plan.id === 'free'
+                          ? 'bg-green-500 hover:bg-green-600 text-white'
+                          : plan.popular
+                            ? 'bg-orange-400 hover:bg-orange-500 text-white'
+                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                          } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                            Chargement...
+                          </div>
+                        ) : (
+                          <>
+                            {plan.id === 'free' ? 'Choisir gratuit' : 'Mettre à niveau'}
+                          </>
+                        )}
+                      </button>
+
+                      {/* Plus d'essai gratuit */}
+
+                      {/* Info pour plan gratuit */}
+                      {plan.id === 'free' && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                          Aucun engagement • Toujours gratuit
+                        </p>
                       )}
-                    </button>
+
+                      {/* Info pour mise à niveau simple */}
+                      {plan.id !== 'free' && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                          {plan.price}€/mois • Annulez à tout moment
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <button
+                        disabled
+                        className="w-full py-3 px-4 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-lg font-medium cursor-not-allowed min-h-[3rem] flex items-center justify-center"
+                      >
+                        Non disponible
+                      </button>
+                    </div>
                   )}
                 </div>
-
-                {/* Trial Info */}
-                {isEligibleForTrial && plan.id !== 'free' && !isCurrentPlan(plan.id) && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-                    Puis {plan.price}€/mois • Annulez à tout moment
-                  </p>
-                )}
               </div>
             ))}
           </div>

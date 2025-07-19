@@ -69,8 +69,7 @@ export class TripService {
         updatedAt: Timestamp.fromDate(new Date(tripData.updatedAt))
       });
 
-      console.log('✅ Nouveau déplacement créé:', docRef.id);
-      console.log('📊 Plan utilisateur:', userProfile.subscription.planId);
+
 
       return docRef.id;
     } catch (error) {

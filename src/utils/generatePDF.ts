@@ -1,6 +1,6 @@
 import { ExpenseNote } from '../types';
-import { storage } from '../config/firebase';
-import { ref, getBlob } from 'firebase/storage';
+// import { storage } from '../config/firebase';
+// import { ref, getBlob } from 'firebase/storage';
 
 // Types pour la génération de PDF
 export interface ExpenseItem {
@@ -42,7 +42,7 @@ export interface ReceiptAttachment {
 // Fonction pour récupérer une facture depuis Firebase Storage avec timeout
 export const fetchReceiptFromFirebase = async (receiptUrl: string): Promise<ReceiptAttachment | null> => {
   try {
-    console.log('📎 Récupération de la facture:', receiptUrl);
+
 
     // ❌ Problème CORS: Firebase Storage bloque les requêtes fetch depuis le navigateur
     // ✅ Solution: On ne télécharge plus les fichiers, on fournit juste les URLs
@@ -77,7 +77,7 @@ export const fetchReceiptFromFirebase = async (receiptUrl: string): Promise<Rece
     // (même si on ne peut pas télécharger le contenu réel à cause de CORS)
     const virtualBlob = new Blob([''], { type: contentType });
 
-    console.log('✅ Facture référencée (CORS évité):', decodedFileName);
+
 
     return {
       name: decodedFileName,
@@ -438,7 +438,7 @@ export const downloadPDF = async (
   filename: string = 'rapport-depenses.pdf'
 ): Promise<boolean> => {
   try {
-    console.log(`📄 Génération du PDF: ${filename}`);
+
 
     // Importer jsPDF dynamiquement
     const { default: jsPDF } = await import('jspdf');
@@ -488,16 +488,16 @@ export const downloadPDF = async (
     const imgWidth = usableWidth; // Largeur réduite pour les marges
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    console.log(`📏 Image: ${imgHeight.toFixed(1)}mm, Page utilisable: ${usableHeight}mm, Largeur: ${imgWidth}mm`);
+
 
     // Vérifier combien de pages sont vraiment nécessaires
     const requiredPages = Math.ceil(imgHeight / usableHeight);
-    console.log(`📄 Pages nécessaires: ${requiredPages}`);
+
 
     if (requiredPages === 1) {
       // Une seule page suffit - centrer l'image avec marges
       pdf.addImage(imgData, 'PNG', marginLeft, marginTop, imgWidth, imgHeight);
-      console.log('✅ PDF créé sur une seule page avec marges');
+
     } else {
       // Plusieurs pages nécessaires - approche par découpage avec marges
       for (let pageIndex = 0; pageIndex < requiredPages; pageIndex++) {
@@ -531,7 +531,7 @@ export const downloadPDF = async (
           const pageImgData = pageCanvas.toDataURL('image/png');
           pdf.addImage(pageImgData, 'PNG', marginLeft, marginTop, imgWidth, heightForThisPage);
 
-          console.log(`📄 Page ${pageIndex + 1}/${requiredPages} ajoutée avec marges`);
+
         }
       }
     }
@@ -539,7 +539,7 @@ export const downloadPDF = async (
     // Télécharger le PDF
     pdf.save(filename);
 
-    console.log(`✅ PDF téléchargé: ${filename} (${pdf.getNumberOfPages()} page(s))`);
+
     return true;
   } catch (error) {
     console.error('❌ Erreur lors de la génération du PDF:', error);
@@ -564,15 +564,12 @@ export const downloadReceiptsAsZip = async (
   tripName: string
 ): Promise<boolean> => {
   try {
-    console.log(`📦 Ouverture de ${receipts.length} factures pour "${tripName}"`);
-
     if (receipts.length === 0) {
-      console.log('⚠️ Aucune facture à ouvrir');
       return true;
     }
 
     // Au lieu de télécharger, on ouvre chaque facture dans un nouvel onglet
-    console.log('🌐 Ouverture des factures dans de nouveaux onglets...');
+
 
     for (let i = 0; i < receipts.length; i++) {
       const receipt = receipts[i];

@@ -196,7 +196,7 @@ const TripDetail: React.FC = () => {
     if (!currentTrip || !id) return;
 
     try {
-      console.log('🖨️ Impression simple du rapport...');
+
 
       const result = await generateTripExpenseReport(
         id,
@@ -233,7 +233,7 @@ const TripDetail: React.FC = () => {
       console.error('❌ Erreur impression simple:', error);
       setReportMessage({
         type: 'error',
-        text: `❌ Erreur lors de l\'impression simple: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+        text: `❌ Erreur lors de l'impression simple: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
       });
       setTimeout(() => setReportMessage(null), 5000);
     }

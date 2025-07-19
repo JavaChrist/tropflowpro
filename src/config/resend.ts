@@ -45,4 +45,5 @@ export const debugEmailConfig = (): void => {
   console.log('🔒 Sécurité: Les clés API restent côté serveur');
 };
 
-export default { sendEmailViaAPI, EMAIL_CONFIG }; 
+const resendConfig = { sendEmailViaAPI, EMAIL_CONFIG };
+export default resendConfig; 
