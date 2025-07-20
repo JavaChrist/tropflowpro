@@ -6,7 +6,7 @@ const mollieClient = createMollieClient({
   apiKey: process.env.MOLLIE_API_KEY, // Clé API Mollie depuis les variables d'environnement
 });
 
-// Configuration des plans
+// Configuration des plans (Pro Entreprise est sur mesure, pas de paiement automatique)
 const PLANS_CONFIG = {
   pro_individual: {
     name: "TropFlow Pro Individuel",
@@ -14,12 +14,7 @@ const PLANS_CONFIG = {
     interval: "1 month",
     description: "Déplacements illimités pour un utilisateur",
   },
-  pro_enterprise: {
-    name: "TropFlow Pro Entreprise",
-    price: "29.99",
-    interval: "1 month",
-    description: "Multi-utilisateurs et fonctionnalités avancées",
-  },
+  // pro_enterprise géré séparément (devis personnalisé)
 };
 
 export default async function handler(req, res) {
@@ -49,6 +44,8 @@ export default async function handler(req, res) {
         );
       } else if (action === "create-subscription") {
         return await createSubscription(req, res);
+      } else if (action === "cancel-subscription") {
+        return await cancelSubscription(req, res);
       } else if (action === "webhook") {
         return await handleWebhook(req, res);
       }
@@ -182,6 +179,44 @@ async function createSubscription(req, res) {
     console.error("❌ Erreur création abonnement:", error);
     return res.status(500).json({
       error: "Erreur lors de la création de l'abonnement",
+      details: error.message,
+    });
+  }
+}
+
+// Annuler un abonnement Mollie
+async function cancelSubscription(req, res) {
+  try {
+    const { subscriptionId, customerId } = req.body;
+
+    if (!subscriptionId || !customerId) {
+      return res.status(400).json({
+        error: "ID d'abonnement et ID client requis",
+      });
+    }
+
+    // Annuler l'abonnement Mollie
+    const subscription = await mollieClient.customers_subscriptions.cancel({
+      customerId: customerId,
+      id: subscriptionId,
+    });
+
+    console.log("✅ Abonnement Mollie annulé:", {
+      subscriptionId: subscription.id,
+      customerId: customerId,
+      status: subscription.status,
+    });
+
+    return res.status(200).json({
+      success: true,
+      subscriptionId: subscription.id,
+      status: subscription.status,
+      canceledAt: subscription.canceledAt,
+    });
+  } catch (error) {
+    console.error("❌ Erreur annulation abonnement:", error);
+    return res.status(500).json({
+      error: "Erreur lors de l'annulation de l'abonnement",
       details: error.message,
     });
   }

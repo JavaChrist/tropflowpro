@@ -3,6 +3,36 @@ import { Resend } from "resend";
 // Configuration Resend côté serveur
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Fonction pour gérer les emails de contact générique
+async function handleContactEmail(req, res) {
+  try {
+    const { to, subject, html, replyTo } = req.body;
+
+    console.log("📧 Envoi email contact vers:", to);
+
+    const data = await resend.emails.send({
+      from: "TropFlow Pro <noreply@javachrist.fr>", // Adresse expéditeur
+      to: to,
+      subject: subject,
+      html: html,
+      replyTo: replyTo || undefined,
+    });
+
+    console.log("✅ Email contact envoyé:", data.id);
+
+    return res.status(200).json({
+      success: true,
+      messageId: data.id,
+    });
+  } catch (error) {
+    console.error("❌ Erreur envoi email contact:", error);
+    return res.status(500).json({
+      error: "Erreur lors de l'envoi de l'email",
+      details: error.message,
+    });
+  }
+}
+
 // Fonction pour télécharger un fichier depuis une URL
 async function downloadFile(url) {
   try {
@@ -117,6 +147,13 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Vérifier si c'est un message de contact générique ou un rapport de voyage
+    if (req.body.to && req.body.subject && req.body.html) {
+      // Message de contact générique
+      return await handleContactEmail(req, res);
+    }
+
+    // Rapport de voyage (ancien code)
     const { tripData, expenseNotes, recipientEmail } = req.body;
 
     console.log("📧 Traitement email pour:", tripData.trip.name);

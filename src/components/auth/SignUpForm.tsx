@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Mail, Lock, Eye, EyeOff, User, Hash, UserPlus, AlertCircle } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import AlertModal from '../AlertModal';
 
 interface SignUpFormProps {
   onToggleMode: () => void;
@@ -19,6 +20,12 @@ interface SignUpFormData {
 const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+  }>({ isOpen: false, title: '', message: '', type: 'info' });
   const { signUp } = useAuth();
 
   const {
@@ -49,7 +56,12 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
 
   const onSubmit = async (data: SignUpFormData) => {
     if (data.password !== data.confirmPassword) {
-      alert('Les mots de passe ne correspondent pas');
+      setAlertModal({
+        isOpen: true,
+        title: '🔐 Erreur de mot de passe',
+        message: 'Les mots de passe saisis ne correspondent pas.\n\nVeuillez vérifier et réessayer.',
+        type: 'error'
+      });
       return;
     }
 
@@ -59,7 +71,12 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
       reset();
     } catch (error: any) {
       console.error('Erreur lors de l\'inscription:', error);
-      alert(error.message || 'Erreur lors de l\'inscription');
+      setAlertModal({
+        isOpen: true,
+        title: '❌ Erreur d\'inscription',
+        message: error.message || 'Une erreur est survenue lors de la création de votre compte.\n\nVeuillez réessayer.',
+        type: 'error'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -278,10 +295,20 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
 
         <button
           type="submit"
-          className="pwa-input w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors font-medium flex items-center justify-center"
+          disabled={isLoading}
+          className="pwa-input w-full bg-green-600 text-white py-4 px-4 rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
         >
-          <UserPlus className="h-5 w-5 mr-2" />
-          Créer mon compte
+          {isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+              Création en cours...
+            </>
+          ) : (
+            <>
+              <UserPlus className="h-5 w-5 mr-2" />
+              Créer mon compte
+            </>
+          )}
         </button>
 
         <div className="text-center">
@@ -294,6 +321,16 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
           </button>
         </div>
       </form>
+
+      {/* Modal d'alerte moderne */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        buttonText="Compris"
+      />
     </div>
   );
 };

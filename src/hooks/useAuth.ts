@@ -5,9 +5,11 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail,
+  deleteUser
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { UserProfile, UserSubscription, PlanType } from '../types';
 
@@ -263,6 +265,113 @@ export const useAuth = () => {
     await updateUserSubscription(updatedSubscription);
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await sendPasswordResetEmail(auth, email);
+      return true;
+    } catch (error: any) {
+      let errorMessage = 'Erreur lors de l\'envoi de l\'email';
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'Aucun compte trouvé avec cet email';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Adresse email invalide';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Trop de tentatives. Réessayez plus tard';
+          break;
+      }
+      setError(errorMessage);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const cancelSubscription = async () => {
+    if (!user || !userProfile) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Si l'utilisateur a un abonnement Mollie, l'annuler
+      if (userProfile.subscription.mollieSubscriptionId) {
+        const response = await fetch('/api/mollie-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'cancel-subscription',
+            subscriptionId: userProfile.subscription.mollieSubscriptionId,
+            customerId: userProfile.subscription.mollieCustomerId
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur lors de l\'annulation de l\'abonnement Mollie');
+        }
+      }
+
+      // Revenir au plan gratuit
+      const freeSubscription: UserSubscription = {
+        planId: 'free' as PlanType,
+        status: 'active',
+        currentPeriodStart: new Date().toISOString(),
+        currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        tripsUsed: userProfile.subscription.tripsUsed, // Conserver l'historique
+        createdAt: userProfile.subscription.createdAt,
+        updatedAt: new Date().toISOString()
+      };
+
+      await updateUserSubscription(freeSubscription);
+      
+      return true;
+    } catch (error: any) {
+      console.error('Erreur lors de l\'annulation:', error);
+      setError('Erreur lors de l\'annulation de l\'abonnement');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (!user || !userProfile) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Annuler l'abonnement Mollie d'abord si il existe
+      if (userProfile.subscription.mollieSubscriptionId) {
+        await cancelSubscription();
+      }
+
+      // Supprimer les données Firestore
+      await deleteDoc(doc(db, 'users', user.uid));
+
+      // Supprimer le compte Firebase Auth
+      await deleteUser(user);
+
+      return true;
+    } catch (error: any) {
+      console.error('Erreur lors de la suppression:', error);
+      let errorMessage = 'Erreur lors de la suppression du compte';
+      
+      if (error.code === 'auth/requires-recent-login') {
+        errorMessage = 'Pour des raisons de sécurité, veuillez vous reconnecter avant de supprimer votre compte';
+      }
+      
+      setError(errorMessage);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       setIsLoading(true);
@@ -284,9 +393,12 @@ export const useAuth = () => {
     error,
     signIn,
     signUp,
+    resetPassword,
     updateUserProfile,
     updateUserSubscription,
     incrementTripsUsed,
+    cancelSubscription,
+    deleteAccount,
     logout,
     clearError,
     isAuthenticated: !!user // Authentifié si Firebase user existe, indépendamment du profil

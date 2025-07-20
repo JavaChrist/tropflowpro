@@ -165,9 +165,7 @@ const UsageStats: React.FC<UsageStatsProps> = ({
             </p>
           )}
 
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 italic">
-            ℹ️ Compteur cumulatif - ne diminue pas lors de suppressions
-          </p>
+
         </div>
 
         {/* Messages d'alerte ou d'encouragement */}

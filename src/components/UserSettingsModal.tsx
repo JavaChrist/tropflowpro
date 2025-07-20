@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { X, User, Hash, Save, AlertCircle } from 'lucide-react';
+import { X, User, Hash, Save, AlertCircle, Shield, Trash2, CreditCard } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 
 
@@ -19,27 +19,36 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   isOpen,
   onClose
 }) => {
-  const { userProfile, updateUserProfile, isLoading, error } = useAuth();
+  const { userProfile, updateUserProfile, cancelSubscription, deleteAccount, isLoading, error } = useAuth();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<UserSettingsFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<UserSettingsFormData>({
     defaultValues: {
-      firstName: userProfile?.firstName || '',
-      lastName: userProfile?.lastName || '',
-      contractNumber: userProfile?.contractNumber || '',
+      firstName: '',
+      lastName: '',
+      contractNumber: '',
     }
   });
 
-  // Réinitialiser le formulaire quand le profil change
+  // Charger les données utilisateur quand le modal s'ouvre ET quand le profil change
   React.useEffect(() => {
-    if (userProfile) {
+    if (isOpen && userProfile) {
+      // Force les valeurs dans les champs
+      setValue('firstName', userProfile.firstName || '');
+      setValue('lastName', userProfile.lastName || '');
+      setValue('contractNumber', userProfile.contractNumber || '');
+
+      // Reset aussi pour la cohérence
       reset({
-        firstName: userProfile.firstName,
-        lastName: userProfile.lastName,
-        contractNumber: userProfile.contractNumber,
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        contractNumber: userProfile.contractNumber || '',
       });
     }
-  }, [userProfile, reset]);
+  }, [isOpen, userProfile, reset, setValue]);
 
   const onSubmit = async (data: UserSettingsFormData) => {
     try {
@@ -53,6 +62,37 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       console.error('Erreur lors de la mise à jour:', error);
     }
   };
+
+  const handleCancelSubscription = async () => {
+    try {
+      await cancelSubscription();
+      setSaveMessage('Abonnement annulé avec succès. Vous restez en version gratuite.');
+      setShowCancelConfirm(false);
+      setTimeout(() => {
+        setSaveMessage(null);
+      }, 3000);
+    } catch (error) {
+      console.error('Erreur lors de l\'annulation:', error);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmText !== 'SUPPRIMER') {
+      return;
+    }
+
+    try {
+      await deleteAccount();
+      // L'utilisateur sera automatiquement déconnecté
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      setShowDeleteConfirm(false);
+      setConfirmText('');
+    }
+  };
+
+  const isPremiumUser = userProfile?.subscription.planId !== 'free';
+  const hasActiveSubscription = userProfile?.subscription.mollieSubscriptionId;
 
   if (!isOpen) return null;
 
@@ -175,6 +215,60 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
               </p>
             </div>
 
+            {/* Danger Zone */}
+            <div className="mt-8 pt-6 border-t border-red-200 dark:border-red-800">
+              <h3 className="text-lg font-medium text-red-900 dark:text-red-400 mb-4 flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                Zone de danger
+              </h3>
+
+              {/* Annuler l'abonnement */}
+              {isPremiumUser && hasActiveSubscription && (
+                <div className="mb-4 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-orange-900 dark:text-orange-400 flex items-center">
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Annuler l'abonnement
+                      </h4>
+                      <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                        Vous repasserez automatiquement en version gratuite. Vos données seront conservées.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowCancelConfirm(true)}
+                      className="ml-4 px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 transition-colors"
+                    >
+                      Annuler l'abonnement
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Supprimer le compte */}
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-red-900 dark:text-red-400 flex items-center">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Supprimer définitivement le compte
+                    </h4>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      Cette action est irréversible. Toutes vos données seront définitivement supprimées.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="ml-4 px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+                  >
+                    Supprimer le compte
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Boutons */}
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -205,6 +299,77 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           </form>
         </div>
       </div>
+
+      {/* Modal de confirmation annulation abonnement */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-60">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Confirmer l'annulation
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Êtes-vous sûr de vouloir annuler votre abonnement ? Vous repasserez en version gratuite mais conserverez vos données.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-md transition-colors"
+              >
+                Garder l'abonnement
+              </button>
+              <button
+                onClick={handleCancelSubscription}
+                disabled={isLoading}
+                className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 transition-colors"
+              >
+                {isLoading ? 'Annulation...' : 'Confirmer l\'annulation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation suppression compte */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-60">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-medium text-red-900 dark:text-red-400 mb-4">
+              ⚠️ Supprimer définitivement le compte
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Cette action supprimera <strong>définitivement</strong> votre compte et toutes vos données. Cette action est <strong>irréversible</strong>.
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Pour confirmer, tapez <strong>SUPPRIMER</strong> dans le champ ci-dessous :
+            </p>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="Tapez SUPPRIMER"
+              className="w-full px-3 py-2 border border-red-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent mb-6"
+            />
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setConfirmText('');
+                }}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-md transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isLoading || confirmText !== 'SUPPRIMER'}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {isLoading ? 'Suppression...' : 'Supprimer définitivement'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

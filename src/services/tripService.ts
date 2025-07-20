@@ -27,7 +27,7 @@ export class TripService {
 
   // Vérifier si l'utilisateur peut créer un nouveau déplacement
   private async checkTripCreationLimit(userProfile: UserProfile): Promise<void> {
-    const canCreate = canCreateTrip(userProfile.subscription);
+    const canCreate = canCreateTrip(userProfile.subscription, userProfile.email);
 
     if (!canCreate) {
       const plan = userProfile.subscription.planId === 'free' ? 10 : -1;

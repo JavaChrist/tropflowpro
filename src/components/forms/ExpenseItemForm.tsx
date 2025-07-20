@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../config/firebase';
+import AlertModal from '../AlertModal';
 
 // Interface pour les notes de frais dans l'architecture des déplacements
 interface CreateExpenseNoteData {
@@ -51,6 +52,12 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialData?.receiptUrl || null);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(initialData?.receiptUrl || null);
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+  }>({ isOpen: false, title: '', message: '', type: 'info' });
 
   const {
     register,
@@ -167,7 +174,12 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
 
       } catch (error) {
         console.error('❌ Erreur lors de l\'upload:', error);
-        alert('Erreur lors de l\'upload du fichier. Veuillez réessayer.');
+        setAlertModal({
+          isOpen: true,
+          title: '📎 Erreur d\'upload',
+          message: 'Impossible d\'uploader le fichier.\n\nVérifiez que le fichier n\'est pas trop volumineux et réessayez.',
+          type: 'error'
+        });
         setSelectedFile(null);
       } finally {
         setIsUploadingFile(false);
@@ -629,6 +641,15 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
         </div >
       </div >
 
+      {/* Modal d'alerte moderne */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        buttonText="Compris"
+      />
     </>
   );
 };

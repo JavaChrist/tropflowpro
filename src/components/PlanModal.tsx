@@ -8,13 +8,15 @@ interface PlanModalProps {
   onClose: () => void;
   userProfile: UserProfile;
   onSelectPlan: (planId: PlanType) => void;
+  onOpenContact?: () => void;
 }
 
 const PlanModal: React.FC<PlanModalProps> = ({
   isOpen,
   onClose,
   userProfile,
-  onSelectPlan
+  onSelectPlan,
+  onOpenContact
 }) => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -130,7 +132,9 @@ const PlanModal: React.FC<PlanModalProps> = ({
                     {plan.name}
                   </h3>
                   <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {plan.price === 0 ? 'Gratuit' : `${plan.price}€`}
+                    {plan.price === 0 ? 'Gratuit' :
+                      plan.price === -1 ? 'Sur mesure' :
+                        `${plan.price}€`}
                     {plan.price > 0 && (
                       <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
                         /mois
@@ -140,6 +144,11 @@ const PlanModal: React.FC<PlanModalProps> = ({
                   {plan.price > 0 && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       Économisez {PlanService.calculateAnnualSavings(plan.price)}€ avec l'abonnement annuel
+                    </p>
+                  )}
+                  {plan.price === -1 && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Tarif adapté à votre organisation
                     </p>
                   )}
                 </div>
@@ -171,6 +180,21 @@ const PlanModal: React.FC<PlanModalProps> = ({
                       </button>
                       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                         Vous utilisez actuellement ce plan
+                      </p>
+                    </div>
+                  ) : plan.id === 'pro_enterprise' ? (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onOpenContact?.();
+                        }}
+                        className="w-full py-3 px-4 rounded-lg font-medium transition-colors min-h-[3rem] flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white"
+                      >
+                        Nous consulter
+                      </button>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                        Devis personnalisé • Solutions sur mesure
                       </p>
                     </div>
                   ) : canChangeToPlan(plan.id) ? (
@@ -207,7 +231,7 @@ const PlanModal: React.FC<PlanModalProps> = ({
                       )}
 
                       {/* Info pour mise à niveau simple */}
-                      {plan.id !== 'free' && (
+                      {plan.id !== 'free' && plan.price > 0 && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                           {plan.price}€/mois • Annulez à tout moment
                         </p>

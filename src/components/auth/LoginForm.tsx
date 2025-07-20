@@ -16,18 +16,30 @@ interface LoginFormData {
 
 const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, isLoading, error, clearError } = useAuth();
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const { signIn, resetPassword, isLoading, error, clearError } = useAuth();
 
-  const { register, handleSubmit, formState: { errors }, clearErrors } = useForm<LoginFormData>({
+  const { register, handleSubmit, formState: { errors }, clearErrors, getValues } = useForm<LoginFormData>({
     mode: 'onSubmit', // Évite la validation automatique sur iOS
     reValidateMode: 'onBlur'
   });
 
-  // Gestionnaire simplifié - supprime les erreurs quand l'utilisateur tape
-  const clearFieldError = (fieldName: keyof LoginFormData) => () => {
-    if (errors[fieldName]) {
-      clearErrors(fieldName);
-    }
+
+
+  // Détecteur d'auto-complétion - Simple nettoyage des erreurs "obligatoire"
+  const handleAutocompleteCheck = (fieldName: keyof LoginFormData) => () => {
+    setTimeout(() => {
+      const value = getValues(fieldName);
+      if (value && value.trim() !== '' && errors[fieldName]) {
+        // Si le champ a du contenu et qu'il y a une erreur "obligatoire", la supprimer
+        const errorMessage = errors[fieldName]?.message;
+        if (errorMessage && errorMessage.includes('obligatoire')) {
+          clearErrors(fieldName);
+        }
+      }
+    }, 100);
   };
 
   // Gestionnaire de focus pour iOS PWA - active le clavier sans validation
@@ -47,6 +59,26 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
     try {
       clearError();
       await signIn(data.email, data.password);
+    } catch (error) {
+      // L'erreur est gérée par le hook useAuth
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      setResetMessage('Veuillez saisir votre adresse email');
+      return;
+    }
+
+    try {
+      await resetPassword(resetEmail);
+      setResetMessage('Email de réinitialisation envoyé ! Vérifiez votre boîte mail.');
+      setTimeout(() => {
+        setShowResetForm(false);
+        setResetMessage('');
+        setResetEmail('');
+      }, 3000);
     } catch (error) {
       // L'erreur est gérée par le hook useAuth
     }
@@ -96,9 +128,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
               pattern: {
                 value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                 message: 'Adresse email invalide'
+              },
+              onChange: (e) => {
+                // Nettoyer les erreurs quand l'utilisateur tape
+                if (errors.email) {
+                  clearErrors('email');
+                }
+              },
+              onBlur: (e) => {
+                // Détecter l'auto-complétion après un délai
+                handleAutocompleteCheck('email')();
               }
             })}
-            onChange={clearFieldError('email')}
             onFocus={handleInputFocus()}
             className="pwa-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             placeholder="votre@email.com"
@@ -128,9 +169,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
                 minLength: {
                   value: 6,
                   message: 'Le mot de passe doit contenir au moins 6 caractères'
+                },
+                onChange: (e) => {
+                  // Nettoyer les erreurs quand l'utilisateur tape
+                  if (errors.password) {
+                    clearErrors('password');
+                  }
+                },
+                onBlur: (e) => {
+                  // Détecter l'auto-complétion après un délai
+                  handleAutocompleteCheck('password')();
                 }
               })}
-              onChange={clearFieldError('password')}
               onFocus={handleInputFocus()}
               className="pwa-input w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="••••••••"
@@ -163,6 +213,60 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
           )}
         </button>
       </form>
+
+      {/* Mot de passe oublié */}
+      <div className="mt-4 text-center">
+        <button
+          type="button"
+          onClick={() => setShowResetForm(!showResetForm)}
+          className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          Mot de passe oublié ?
+        </button>
+      </div>
+
+      {/* Formulaire de reset */}
+      {showResetForm && (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+          <h4 className="text-sm font-medium text-gray-900 mb-3">
+            Réinitialiser votre mot de passe
+          </h4>
+          <form onSubmit={handleResetPassword}>
+            <input
+              type="email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              placeholder="Votre adresse email"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3"
+            />
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
+              >
+                {isLoading ? 'Envoi...' : 'Envoyer'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowResetForm(false);
+                  setResetMessage('');
+                  setResetEmail('');
+                }}
+                className="px-3 py-2 text-gray-600 hover:text-gray-800 text-sm"
+              >
+                Annuler
+              </button>
+            </div>
+          </form>
+          {resetMessage && (
+            <p className={`mt-2 text-sm ${resetMessage.includes('envoyé') ? 'text-green-600' : 'text-red-600'}`}>
+              {resetMessage}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="mt-6 text-center">
         <p className="text-gray-600">

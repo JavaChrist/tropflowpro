@@ -122,7 +122,7 @@ export const AVAILABLE_PLANS: PlanFeatures[] = [
   {
     id: 'pro_enterprise',
     name: 'Pro Entreprise',
-    price: 29.99,
+    price: -1, // Prix sur mesure
     maxTrips: -1,
     maxUsers: -1,
     features: [
@@ -132,7 +132,8 @@ export const AVAILABLE_PLANS: PlanFeatures[] = [
       'Rapports consolidés',
       'API d\'intégration',
       'Support dédié',
-      'Facturation centralisée'
+      'Facturation centralisée',
+      'Offre sur mesure adaptée à vos besoins'
     ]
   }
 ];
@@ -142,7 +143,27 @@ export const getPlanById = (planId: PlanType): PlanFeatures | undefined => {
   return AVAILABLE_PLANS.find(plan => plan.id === planId);
 };
 
-export const canCreateTrip = (subscription: UserSubscription): boolean => {
+// Liste des emails autorisés pour l'accès admin/propriétaire
+const ADMIN_EMAILS = [
+  'contact@javachrist.fr',    // Propriétaire principal
+  'admin@javachrist.fr',      // Compte admin supplémentaire
+  // Ajoutez d'autres emails admin ici si besoin
+];
+
+// Vérifier si un utilisateur est administrateur/propriétaire
+export const isAdminUser = (email: string): boolean => {
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+};
+
+// Vérifier si l'utilisateur peut créer un déplacement (avec bypass admin)
+export const canCreateTrip = (subscription: UserSubscription, userEmail?: string): boolean => {
+  // 🔑 BYPASS ADMIN : Les propriétaires/admins ont toujours accès illimité
+  if (userEmail && isAdminUser(userEmail)) {
+    console.log('👑 Accès admin détecté - bypass des limites');
+    return true;
+  }
+
+  // Logique normale pour les autres utilisateurs
   const plan = getPlanById(subscription.planId);
   if (!plan) return false;
 

@@ -9,7 +9,8 @@ import {
   LogOut,
   User,
   Home,
-  Crown
+  Crown,
+  Mail
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import UserSettingsModal from './UserSettingsModal';
@@ -17,6 +18,8 @@ import ThemeToggle from './ThemeToggle';
 import ConfirmModal from './ConfirmModal';
 import InstallButton from './InstallButton';
 import PlanModal from './PlanModal';
+import ContactModal from './ContactModal';
+import AlertModal from './AlertModal';
 import { PlanType } from '../types';
 import PlanService from '../services/planService';
 
@@ -30,7 +33,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const [confirmLogout, setConfirmLogout] = React.useState(false);
   const [isPlanModalOpen, setIsPlanModalOpen] = React.useState(false);
-  const { userProfile, logout, updateUserSubscription } = useAuth();
+  const [isContactModalOpen, setIsContactModalOpen] = React.useState(false);
+  const [downgradeConfirm, setDowngradeConfirm] = React.useState(false);
+  const [alertModal, setAlertModal] = React.useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+  }>({ isOpen: false, title: '', message: '', type: 'info' });
+  const { userProfile, logout, updateUserSubscription, cancelSubscription } = useAuth();
 
   const navigation = [
     { name: 'Tableau de bord', href: '/', icon: Home },
@@ -69,19 +80,53 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     try {
       if (planId === 'free') {
-        // Rétrogradation vers le plan gratuit
-        const freeSubscription = PlanService.createFreeSubscription();
-        await updateUserSubscription(freeSubscription);
-        console.log('✅ Plan mis à jour vers gratuit');
+        // Vérifier si l'utilisateur a un abonnement payant
+        const isPaidUser = userProfile.subscription.planId !== 'free';
+
+        if (isPaidUser) {
+          // Demander confirmation pour la rétrogradation
+          setIsPlanModalOpen(false);
+          setDowngradeConfirm(true);
+          return;
+        }
+
+        // Utilisateur déjà gratuit, pas de changement nécessaire
         setIsPlanModalOpen(false);
       } else {
         // Pour les plans premium, rediriger vers la page appropriée pour configurer le paiement
         setIsPlanModalOpen(false);
-        alert('🔗 Redirection vers le paiement Mollie à configurer sur la version de production');
+        setAlertModal({
+          isOpen: true,
+          title: '🚀 Abonnement Premium',
+          message: 'L\'intégration Mollie est configurée pour la production.\n\nVous serez redirigé vers le paiement sécurisé pour activer votre abonnement Pro.',
+          type: 'info'
+        });
       }
     } catch (error) {
       console.error('❌ Erreur lors de la mise à jour du plan:', error);
     }
+  };
+
+  const handleDowngradeConfirm = async () => {
+    try {
+      // Annuler l'abonnement Mollie si il existe
+      if (userProfile?.subscription.mollieSubscriptionId) {
+        await cancelSubscription();
+      } else {
+        // Si pas d'abonnement Mollie, juste changer localement
+        const freeSubscription = PlanService.createFreeSubscription();
+        await updateUserSubscription(freeSubscription);
+      }
+
+      setDowngradeConfirm(false);
+      console.log('✅ Rétrogradation vers plan gratuit confirmée');
+    } catch (error) {
+      console.error('❌ Erreur lors de la rétrogradation:', error);
+    }
+  };
+
+  const handleDowngradeCancel = () => {
+    setDowngradeConfirm(false);
   };
 
   return (
@@ -145,9 +190,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </div>
 
-              {/* Theme Toggle, Plans, Settings and Logout - Desktop */}
+              {/* Theme Toggle, Contact, Plans, Settings and Logout - Desktop */}
               <div className="hidden md:flex items-center space-x-2">
                 <ThemeToggle />
+                <button
+                  onClick={() => setIsContactModalOpen(true)}
+                  className="p-2 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 transition-colors duration-200"
+                  title="Nous contacter"
+                >
+                  <Mail className="h-5 w-5" />
+                </button>
                 <button
                   onClick={() => setIsPlanModalOpen(true)}
                   className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-200"
@@ -228,12 +280,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 );
               })}
 
-              {/* Theme Toggle, Settings and Logout - Mobile */}
+              {/* Theme Toggle, Contact, Settings and Logout - Mobile */}
               <div className="border-t border-gray-200 dark:border-gray-600 pt-3 space-y-1">
                 <div className="flex items-center justify-between px-3 py-2">
                   <span className="text-base font-medium text-gray-500 dark:text-gray-400">Thème</span>
                   <ThemeToggle />
                 </div>
+                <button
+                  onClick={() => {
+                    setIsContactModalOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 w-full transition-colors duration-200"
+                >
+                  <Mail className="h-5 w-5 mr-3" />
+                  Nous contacter
+                </button>
                 <button
                   onClick={() => {
                     setIsSettingsOpen(true);
@@ -269,6 +331,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 safe-area-inset">
           <div className="text-center text-sm text-gray-500 dark:text-gray-400">
             © {new Date().getFullYear()} TropFlow Pro - Gestionnaire de frais de déplacement
+            <br />
+            <span className="text-xs">Développé par <strong className="text-gray-700 dark:text-gray-300">JavaChrist</strong></span>
           </div>
         </div>
       </footer>
@@ -286,8 +350,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           onClose={() => setIsPlanModalOpen(false)}
           userProfile={userProfile}
           onSelectPlan={handleSelectPlan}
+          onOpenContact={() => setIsContactModalOpen(true)}
         />
       )}
+
+      {/* Contact Modal */}
+      <ContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+      />
 
       {/* Bouton d'installation PWA */}
       <InstallButton />
@@ -302,6 +373,47 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         type="warning"
         confirmText="Se déconnecter"
         cancelText="Rester connecté"
+      />
+
+      {/* Confirmation de rétrogradation */}
+      <ConfirmModal
+        isOpen={downgradeConfirm}
+        onClose={handleDowngradeCancel}
+        onConfirm={handleDowngradeConfirm}
+        title="⚠️ Passer au plan gratuit"
+        message={
+          <>
+            <p className="mb-3">
+              <strong>Attention !</strong> Vous allez perdre votre abonnement Pro ({userProfile?.subscription.planId === 'pro_individual' ? 'Individuel' : 'Entreprise'}).
+            </p>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-3">
+              <p className="text-sm text-red-800 dark:text-red-200">
+                <strong>Conséquences :</strong>
+              </p>
+              <ul className="text-sm text-red-700 dark:text-red-300 mt-1 space-y-1">
+                <li>• Votre abonnement sera <strong>annulé immédiatement</strong></li>
+                <li>• Vous serez limité à <strong>10 déplacements maximum</strong></li>
+                <li>• Pour repasser au Pro, vous devrez <strong>payer à nouveau</strong></li>
+              </ul>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Cette action est irréversible. Êtes-vous certain de vouloir continuer ?
+            </p>
+          </>
+        }
+        type="danger"
+        confirmText="Oui, passer au gratuit"
+        cancelText="Non, garder mon abonnement Pro"
+      />
+
+      {/* Modal d'alerte moderne */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        buttonText="Compris"
       />
     </div>
   );

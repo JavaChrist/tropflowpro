@@ -5,7 +5,7 @@ import { db } from '../config/firebase';
 export class PlanService {
   // Vérifier si l'utilisateur peut créer un nouveau déplacement
   static canUserCreateTrip(userProfile: UserProfile): boolean {
-    return canCreateTrip(userProfile.subscription);
+    return canCreateTrip(userProfile.subscription, userProfile.email);
   }
 
   // Obtenir les statistiques d'utilisation de l'utilisateur
@@ -19,7 +19,7 @@ export class PlanService {
       userId: userProfile.uid,
       currentTripsCount,
       maxTripsAllowed,
-      isLimitReached: !canCreateTrip(userProfile.subscription),
+      isLimitReached: !canCreateTrip(userProfile.subscription, userProfile.email),
       planType: userProfile.subscription.planId,
       remainingTrips
     };
@@ -57,7 +57,7 @@ export class PlanService {
 
   // Obtenir le message de limitation pour l'utilisateur
   static getLimitationMessage(userProfile: UserProfile): string | null {
-    const stats = canCreateTrip(userProfile.subscription);
+    const stats = canCreateTrip(userProfile.subscription, userProfile.email);
 
     if (stats) {
       return null; // Pas de limitation
