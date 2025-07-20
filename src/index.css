@@ -131,12 +131,35 @@
     outline-offset: 2px !important;
   }
 
-  /* PWA specific fixes */
+  /* PWA specific fixes - approche simple et efficace */
+  .pwa-input {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    font-size: 16px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    border-radius: 0.5rem !important;
+    background-color: white !important;
+    opacity: 1 !important;
+    cursor: text !important;
+    /* Corrections spécifiques iOS */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+    -webkit-user-modify: read-write-plaintext-only !important;
+  }
+
+  .pwa-input:focus {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    cursor: text !important;
+    z-index: 999 !important;
+  }
+
+  /* Mode PWA standalone - corrections ultra ciblées */
   @media all and (display-mode: standalone) {
-    /* Mode PWA - corrections spécifiques */
-    input,
-    textarea,
-    select {
+    .pwa-input {
       -webkit-user-select: text !important;
       user-select: text !important;
       -webkit-touch-callout: default !important;
@@ -145,52 +168,63 @@
       font-size: 16px !important;
       -webkit-appearance: none !important;
       appearance: none !important;
-      opacity: 1 !important;
       background-color: white !important;
-      border-radius: 0.5rem !important;
+      opacity: 1 !important;
+      cursor: text !important;
       position: relative !important;
       z-index: 1 !important;
     }
 
-    /* Force input focus in PWA */
-    input:focus,
-    textarea:focus,
-    input:active,
-    textarea:active {
+    .pwa-input:focus,
+    .pwa-input:active {
       -webkit-user-select: text !important;
       user-select: text !important;
+      cursor: text !important;
       outline: 2px solid #3b82f6 !important;
       outline-offset: 2px !important;
-      background-color: white !important;
-      opacity: 1 !important;
+      z-index: 999 !important;
       transform: translateZ(0) !important;
     }
 
-    /* Ensure forms work in PWA mode */
-    form {
-      -webkit-transform: translateZ(0);
-      transform: translateZ(0);
-      position: relative !important;
-      z-index: 1 !important;
-    }
+    /* Corrections spécifiques iOS PWA */
+    @supports (-webkit-overflow-scrolling: touch) {
+      .pwa-input {
+        -webkit-user-modify: read-write-plaintext-only !important;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+        -webkit-touch-callout: default !important;
+        -webkit-user-select: text !important;
+        user-select: text !important;
+        transform: translateZ(0) !important;
+        will-change: transform !important;
+        /* Force keyboard activation on iOS */
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        border-radius: 0 !important;
+      }
 
-    /* PWA body adjustments */
-    body {
-      -webkit-touch-callout: default !important;
-      -webkit-user-select: text !important;
-      user-select: text !important;
-      -webkit-overflow-scrolling: touch !important;
-    }
+      .pwa-input:focus,
+      .pwa-input:active,
+      .pwa-input:hover {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+        -webkit-touch-callout: default !important;
+        cursor: text !important;
+        transform: translateZ(0) !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        /* Force immediate keyboard display */
+        outline: none !important;
+        box-shadow: 0 0 0 2px #3b82f6 !important;
+      }
 
-    /* Disable any potential overlay interference */
-    * {
-      -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
-    }
-
-    /* Ensure input containers don't interfere */
-    .relative {
-      position: relative !important;
-      z-index: 1 !important;
+      /* Alternative approach for iOS - force contenteditable behavior */
+      .pwa-input[type="email"],
+      .pwa-input[type="password"],
+      .pwa-input[type="text"] {
+        -webkit-user-modify: read-write !important;
+        -webkit-appearance: textfield !important;
+        appearance: textfield !important;
+      }
     }
   }
 

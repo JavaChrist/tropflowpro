@@ -126,6 +126,18 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
     }
   };
 
+  // Fonction pour déclencher le sélecteur de fichier
+  const triggerFileInput = () => {
+    if (!isUploadingFile) {
+      const input = document.getElementById('file-upload') as HTMLInputElement;
+      if (input) {
+        // Reset de l'input pour permettre de sélectionner le même fichier
+        input.value = '';
+        input.click();
+      }
+    }
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -232,15 +244,26 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                   const IconComponent = config.icon;
                   const isSelected = watchedCategory === key;
                   return (
-                    <label
+                    <div
                       key={key}
-                      className={`relative cursor-pointer rounded-lg border p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all ${isSelected
-                        ? `border-blue-500 bg-blue-50 dark:bg-blue-900/30`
+                      className={`relative cursor-pointer rounded-lg border p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all select-none min-h-[80px] touch-manipulation ${isSelected
+                        ? `border-blue-500 bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-500`
                         : 'border-gray-200 dark:border-gray-600'
                         }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setValue('category', key as 'transport_long' | 'transport_short' | 'accommodation' | 'meals' | 'other');
+                        setValue('subcategory', '');
+                      }}
+                      onTouchEnd={(e) => {
+                        e.preventDefault();
+                        setValue('category', key as 'transport_long' | 'transport_short' | 'accommodation' | 'meals' | 'other');
+                        setValue('subcategory', '');
+                      }}
                     >
                       <input
                         type="radio"
+                        name="category"
                         value={key}
                         checked={watchedCategory === key}
                         className="sr-only"
@@ -251,15 +274,20 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                           }
                         }}
                       />
-                      <div className="flex flex-col items-center text-center">
+                      <div className="flex flex-col items-center text-center h-full justify-center">
                         <IconComponent
                           className={`h-6 w-6 mb-2 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}
                         />
-                        <span className={`text-sm font-medium ${isSelected ? 'text-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-gray-300'}`}>
+                        <span className={`text-xs font-medium leading-tight ${isSelected ? 'text-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-gray-300'}`}>
                           {config.name}
                         </span>
                       </div>
-                    </label>
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -270,17 +298,25 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Type de {currentCategory.name.toLowerCase()} *
               </label>
-              <select
-                {...register('subcategory', { required: 'Veuillez sélectionner un type' })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="">Sélectionner...</option>
-                {currentCategory.subcategories.map((sub) => (
-                  <option key={sub.value} value={sub.value}>
-                    {sub.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  {...register('subcategory', { required: 'Veuillez sélectionner un type' })}
+                  className="w-full px-4 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white cursor-pointer appearance-none touch-manipulation"
+                  style={{ fontSize: '16px', minHeight: '48px' }}
+                >
+                  <option value="">Sélectionner...</option>
+                  {currentCategory.subcategories.map((sub) => (
+                    <option key={sub.value} value={sub.value}>
+                      {sub.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
               {errors.subcategory && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.subcategory.message}</p>
               )}
@@ -295,7 +331,8 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
               <input
                 type="date"
                 {...register('date', { required: 'La date est obligatoire' })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white cursor-pointer touch-manipulation"
+                style={{ fontSize: '16px', minHeight: '48px' }}
               />
               {errors.date && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date.message}</p>
@@ -312,11 +349,13 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                 <input
                   type="number"
                   step="0.01"
+                  inputMode="decimal"
                   {...register('amount', {
                     required: 'Le montant est obligatoire',
                     min: { value: 0, message: 'Le montant doit être positif' }
                   })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 touch-manipulation"
+                  style={{ fontSize: '16px', minHeight: '48px' }}
                   placeholder="0.00"
                 />
                 {errors.amount && (
@@ -325,28 +364,151 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
               </div>
 
               <div className="flex flex-col space-y-4">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    {...register('isVeloce')}
-                    className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 bg-white dark:bg-gray-700"
-                  />
-                  <label className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div
+                  className="flex items-center cursor-pointer select-none p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors active:bg-gray-100 dark:active:bg-gray-600 touch-manipulation"
+                  style={{ minHeight: '60px', touchAction: 'manipulation' }}
+                  onTouchStart={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.style.backgroundColor = '';
+                    setValue('isVeloce', true);
+                    setValue('isPersonal', false);
+                  }}
+                  onTouchCancel={(e) => {
+                    e.currentTarget.style.backgroundColor = '';
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setValue('isVeloce', true);
+                    setValue('isPersonal', false);
+                  }}
+                >
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      value="veloce"
+                      checked={watch('isVeloce') === true && watch('isPersonal') === false}
+                      onChange={() => {
+                        setValue('isVeloce', true);
+                        setValue('isPersonal', false);
+                      }}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 transition-all ${watch('isVeloce') && !watch('isPersonal')
+                      ? 'border-blue-600 bg-blue-600'
+                      : 'border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-700'
+                      }`}>
+                      {watch('isVeloce') && !watch('isPersonal') && (
+                        <div className="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                      )}
+                    </div>
+                  </div>
+                  <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Via VELOCE
-                  </label>
+                  </span>
                 </div>
 
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    {...register('isPersonal')}
-                    className="h-4 w-4 text-orange-600 border-gray-300 dark:border-gray-600 rounded focus:ring-orange-500 bg-white dark:bg-gray-700"
-                  />
-                  <label className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div
+                  className="flex items-center cursor-pointer select-none p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors active:bg-gray-100 dark:active:bg-gray-600 touch-manipulation"
+                  style={{ minHeight: '60px', touchAction: 'manipulation' }}
+                  onTouchStart={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(251, 146, 60, 0.1)';
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.style.backgroundColor = '';
+                    setValue('isPersonal', true);
+                    setValue('isVeloce', false);
+                  }}
+                  onTouchCancel={(e) => {
+                    e.currentTarget.style.backgroundColor = '';
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setValue('isPersonal', true);
+                    setValue('isVeloce', false);
+                  }}
+                >
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      value="personal"
+                      checked={watch('isPersonal') === true && watch('isVeloce') === false}
+                      onChange={() => {
+                        setValue('isPersonal', true);
+                        setValue('isVeloce', false);
+                      }}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 transition-all ${watch('isPersonal') && !watch('isVeloce')
+                      ? 'border-orange-600 bg-orange-600'
+                      : 'border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-700'
+                      }`}>
+                      {watch('isPersonal') && !watch('isVeloce') && (
+                        <div className="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                      )}
+                    </div>
+                  </div>
+                  <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Frais personnel
-                  </label>
+                  </span>
+                </div>
+
+                <div
+                  className="flex items-center cursor-pointer select-none p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors active:bg-gray-100 dark:active:bg-gray-600 touch-manipulation"
+                  style={{ minHeight: '60px', touchAction: 'manipulation' }}
+                  onTouchStart={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(107, 114, 128, 0.1)';
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.style.backgroundColor = '';
+                    setValue('isVeloce', false);
+                    setValue('isPersonal', false);
+                  }}
+                  onTouchCancel={(e) => {
+                    e.currentTarget.style.backgroundColor = '';
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setValue('isVeloce', false);
+                    setValue('isPersonal', false);
+                  }}
+                >
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      value="neither"
+                      checked={watch('isVeloce') === false && watch('isPersonal') === false}
+                      onChange={() => {
+                        setValue('isVeloce', false);
+                        setValue('isPersonal', false);
+                      }}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 transition-all ${!watch('isVeloce') && !watch('isPersonal')
+                      ? 'border-gray-600 bg-gray-600 dark:border-gray-400 dark:bg-gray-400'
+                      : 'border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-700'
+                      }`}>
+                      {!watch('isVeloce') && !watch('isPersonal') && (
+                        <div className="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                      )}
+                    </div>
+                  </div>
+                  <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Aucun (frais standard)
+                  </span>
                 </div>
               </div>
+
+              {/* Champs cachés pour enregistrer les valeurs dans le formulaire */}
+              <input type="hidden" {...register('isVeloce')} />
+              <input type="hidden" {...register('isPersonal')} />
             </div>
 
             {/* Upload de reçu */}
@@ -359,15 +521,30 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
                   <div className="text-center">
                     <Receipt className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <label className={`cursor-pointer block ${isUploadingFile ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className="relative">
                       <input
                         type="file"
                         accept="image/*,.pdf"
                         onChange={handleFileChange}
-                        className="sr-only"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                         disabled={isUploadingFile}
+                        id="file-upload"
+                        style={{ fontSize: '16px' }}
                       />
-                      <div className="w-full max-w-xs mx-auto p-4 border-2 border-dashed rounded-lg text-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border-gray-300 dark:border-gray-600">
+                      <div
+                        className={`relative w-full max-w-xs mx-auto p-4 min-h-[48px] border-2 border-dashed rounded-lg text-center transition-colors border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center touch-manipulation ${isUploadingFile
+                          ? 'opacity-50 cursor-not-allowed'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-blue-400 active:bg-gray-100 dark:active:bg-gray-500 cursor-pointer'
+                          }`}
+                        onClick={triggerFileInput}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          triggerFileInput();
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                        }}
+                      >
                         {isUploadingFile ? (
                           <>
                             <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent mx-auto mb-2"></div>
@@ -376,11 +553,12 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                         ) : (
                           <>
                             <Upload className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                            <span className="text-sm text-gray-600 dark:text-gray-300">Choisir une facture</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Choisir une facture</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sélectionner un fichier</span>
                           </>
                         )}
                       </div>
-                    </label>
+                    </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
                       PNG, JPG, PDF jusqu'à 10MB
                     </p>
@@ -448,8 +626,8 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
               </button>
             </div>
           </form>
-        </div>
-      </div>
+        </div >
+      </div >
 
     </>
   );

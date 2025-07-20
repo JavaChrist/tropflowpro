@@ -160,11 +160,11 @@ export const generateExpensePDFContent = (
 
   // Grouper les dépenses par catégorie
   const categories = {
-    'transport_long': { name: 'Transport longue distance', subtitle: '(avion, train, location voiture)', expenses: [] as ExpenseItem[] },
-    'transport_short': { name: 'Transport courte distance', subtitle: '(taxi, métro, bus)', expenses: [] as ExpenseItem[] },
-    'accommodation': { name: 'Hébergement', subtitle: '(hôtel, airbnb)', expenses: [] as ExpenseItem[] },
-    'meals': { name: 'Repas', subtitle: '(restaurant, repas)', expenses: [] as ExpenseItem[] },
-    'other': { name: 'Autres', subtitle: '(autres frais)', expenses: [] as ExpenseItem[] }
+    'transport_long': { name: 'Transport longue distance', subtitle: '', expenses: [] as ExpenseItem[] },
+    'transport_short': { name: 'Transport courte distance', subtitle: '', expenses: [] as ExpenseItem[] },
+    'accommodation': { name: 'Hébergement', subtitle: '', expenses: [] as ExpenseItem[] },
+    'meals': { name: 'Repas', subtitle: '', expenses: [] as ExpenseItem[] },
+    'other': { name: 'Autres', subtitle: '', expenses: [] as ExpenseItem[] }
   };
 
   expenses.forEach(expense => {
@@ -372,7 +372,6 @@ export const generateExpensePDFContent = (
       <tr>
         <td>
           <div class="category-name">${category.name}</div>
-          <span class="category-subtitle">${category.subtitle}</span>
         </td>
         <td class="checkbox">${hasVeloce ? '☑' : '☐'}</td>
         <td class="checkbox">${hasPersonal ? '☑' : '☐'}</td>

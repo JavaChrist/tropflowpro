@@ -271,28 +271,28 @@ const EditTrip: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-between pt-6">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/trips/${id}`)}
-                  className="px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-lg transition-colors"
-                >
-                  Annuler
-                </button>
-
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between pt-6">
                 <button
                   type="submit"
                   disabled={isSubmitting || isLoading}
-                  className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+                  className="order-1 sm:order-2 w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
                 >
                   {isSubmitting || isLoading ? (
-                    <div className="flex items-center">
+                    <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       Modification...
                     </div>
                   ) : (
                     'Sauvegarder les modifications'
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate(`/trips/${id}`)}
+                  className="order-2 sm:order-1 w-full sm:w-auto px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-lg transition-colors"
+                >
+                  Annuler
                 </button>
               </div>
             </form>

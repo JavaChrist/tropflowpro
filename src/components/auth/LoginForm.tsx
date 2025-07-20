@@ -18,7 +18,30 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
   const [showPassword, setShowPassword] = useState(false);
   const { signIn, isLoading, error, clearError } = useAuth();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
+  const { register, handleSubmit, formState: { errors }, clearErrors } = useForm<LoginFormData>({
+    mode: 'onSubmit', // Évite la validation automatique sur iOS
+    reValidateMode: 'onBlur'
+  });
+
+  // Gestionnaire simplifié - supprime les erreurs quand l'utilisateur tape
+  const clearFieldError = (fieldName: keyof LoginFormData) => () => {
+    if (errors[fieldName]) {
+      clearErrors(fieldName);
+    }
+  };
+
+  // Gestionnaire de focus pour iOS PWA - active le clavier sans validation
+  const handleInputFocus = () => (e: React.FocusEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+
+    // Force l'activation du clavier iOS avec setSelectionRange seulement si supporté
+    setTimeout(() => {
+      if (input.type === 'text' || input.type === 'password' || input.type === 'search' || input.type === 'url' || input.type === 'tel') {
+        const len = input.value.length;
+        input.setSelectionRange(len, len);
+      }
+    }, 50);
+  };
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -75,7 +98,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
                 message: 'Adresse email invalide'
               }
             })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            onChange={clearFieldError('email')}
+            onFocus={handleInputFocus()}
+            className="pwa-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             placeholder="votre@email.com"
           />
           {errors.email && (
@@ -105,7 +130,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
                   message: 'Le mot de passe doit contenir au moins 6 caractères'
                 }
               })}
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              onChange={clearFieldError('password')}
+              onFocus={handleInputFocus()}
+              className="pwa-input w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="••••••••"
             />
             <button

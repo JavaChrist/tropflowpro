@@ -27,9 +27,25 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
     formState: { errors },
     watch,
     reset,
-  } = useForm<SignUpFormData>();
+  } = useForm<SignUpFormData>({
+    mode: 'onTouched', // Validation seulement après interaction
+    reValidateMode: 'onChange'
+  });
 
   const password = watch('password');
+
+  // Gestionnaire de focus pour iOS PWA - active le clavier sans validation
+  const handleInputFocus = () => (e: React.FocusEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+
+    // Force l'activation du clavier iOS avec setSelectionRange seulement si supporté
+    setTimeout(() => {
+      if (input.type === 'text' || input.type === 'password' || input.type === 'search' || input.type === 'url' || input.type === 'tel') {
+        const len = input.value.length;
+        input.setSelectionRange(len, len);
+      }
+    }, 50);
+  };
 
   const onSubmit = async (data: SignUpFormData) => {
     if (data.password !== data.confirmPassword) {
@@ -85,7 +101,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
               {...register('firstName', {
                 required: 'Le prénom est obligatoire'
               })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+              onFocus={handleInputFocus()}
+              className="pwa-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
               placeholder="Jean"
             />
             {errors.firstName && (
@@ -113,7 +130,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
               {...register('lastName', {
                 required: 'Le nom est obligatoire'
               })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+              onFocus={handleInputFocus()}
+              className="pwa-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
               placeholder="Dupont"
             />
             {errors.lastName && (
@@ -142,7 +160,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
             {...register('contractNumber', {
               required: 'Le numéro de contrat est obligatoire'
             })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+            onFocus={handleInputFocus()}
+            className="pwa-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
             placeholder="CNT-2024-001"
           />
           {errors.contractNumber && (
@@ -174,7 +193,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
                 message: 'Email invalide'
               }
             })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+            onFocus={handleInputFocus()}
+            className="pwa-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
             placeholder="votre@email.com"
           />
           {errors.email && (
@@ -207,7 +227,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
                   message: 'Le mot de passe doit contenir au moins 6 caractères'
                 }
               })}
-              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+              onFocus={handleInputFocus()}
+              className="pwa-input w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
               placeholder="••••••••"
             />
             <button
@@ -243,7 +264,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
               required: 'Veuillez confirmer votre mot de passe',
               validate: (value) => value === password || 'Les mots de passe ne correspondent pas'
             })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+            onFocus={handleInputFocus()}
+            className="pwa-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
             placeholder="••••••••"
           />
           {errors.confirmPassword && (
@@ -256,7 +278,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
 
         <button
           type="submit"
-          className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors font-medium flex items-center justify-center"
+          className="pwa-input w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors font-medium flex items-center justify-center"
         >
           <UserPlus className="h-5 w-5 mr-2" />
           Créer mon compte

@@ -64,6 +64,14 @@ const TripDetail: React.FC = () => {
   const [confirmPayment, setConfirmPayment] = useState(false);
   const [reportMessage, setReportMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // États pour les modales de sélection de notes
+  const [noteSelectionModal, setNoteSelectionModal] = useState<{
+    isOpen: boolean;
+    action: 'edit' | 'delete' | null;
+    category: string;
+    notes: ExpenseNote[];
+  }>({ isOpen: false, action: null, category: '', notes: [] });
+
   useEffect(() => {
     if (id) {
       loadTrip(id);
@@ -160,6 +168,38 @@ const TripDetail: React.FC = () => {
 
   const handleDeleteCancel = () => {
     setConfirmDelete({ isOpen: false, type: 'trip' });
+  };
+
+  // Gestionnaires pour les modales de sélection de notes
+  const handleCategoryEditClick = (category: string, notes: ExpenseNote[]) => {
+    setNoteSelectionModal({
+      isOpen: true,
+      action: 'edit',
+      category: getCategoryName(category),
+      notes
+    });
+  };
+
+  const handleCategoryDeleteClick = (category: string, notes: ExpenseNote[]) => {
+    setNoteSelectionModal({
+      isOpen: true,
+      action: 'delete',
+      category: getCategoryName(category),
+      notes
+    });
+  };
+
+  const handleNoteSelectionClose = () => {
+    setNoteSelectionModal({ isOpen: false, action: null, category: '', notes: [] });
+  };
+
+  const handleNoteSelectionConfirm = (note: ExpenseNote) => {
+    if (noteSelectionModal.action === 'edit') {
+      handleEditNoteClick(note);
+    } else if (noteSelectionModal.action === 'delete') {
+      handleDeleteNoteClick(note.id);
+    }
+    handleNoteSelectionClose();
   };
 
   const handleMarkAsPaidClick = () => {
@@ -433,23 +473,36 @@ const TripDetail: React.FC = () => {
 
                     return (
                       <tr key={category} className="bg-gray-50 dark:bg-gray-700">
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white print:py-2">
-                          {getCategoryName(category)}
-                          <br />
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            ({category === 'transport_long' ? 'avion, train, location voiture' :
-                              category === 'transport_short' ? 'taxi, métro, bus' :
-                                category === 'accommodation' ? 'hôtel, airbnb' :
-                                  category === 'meals' ? 'restaurant, repas' : 'autres frais'})
-                          </span>
+                        <td className="px-4 py-4 font-medium text-gray-900 dark:text-white print:py-2">
+                          <div className="flex flex-col">
+                            <span className="mb-2">{getCategoryName(category)}</span>
+                            {categoryNotes.length > 0 && (trip.status === 'draft' || !trip.status) && (
+                              <div className="flex items-center space-x-1 print:hidden">
+                                <button
+                                  onClick={() => handleCategoryEditClick(category, categoryNotes)}
+                                  className="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors touch-manipulation"
+                                  title={`Modifier les notes de ${getCategoryName(category)}`}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleCategoryDeleteClick(category, categoryNotes)}
+                                  className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors touch-manipulation"
+                                  title={`Supprimer les notes de ${getCategoryName(category)}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 text-center print:py-2">
-                          {hasVeloce ? '☑' : '☐'}
+                        <td className="px-4 py-4 text-center print:py-2">
+                          <span className="text-lg">{hasVeloce ? '☑' : '☐'}</span>
                         </td>
-                        <td className="px-4 py-3 text-center print:py-2">
-                          {hasPersonal ? '☑' : '☐'}
+                        <td className="px-4 py-4 text-center print:py-2">
+                          <span className="text-lg">{hasPersonal ? '☑' : '☐'}</span>
                         </td>
-                        <td className="px-4 py-3 print:py-2">
+                        <td className="px-4 py-4 print:py-2">
                           {categoryNotes.length > 0 ? (
                             <div className="space-y-1">
                               {categoryNotes.map(note => {
@@ -462,28 +515,10 @@ const TripDetail: React.FC = () => {
                                   .replace(/^Autres - /, '');
 
                                 return (
-                                  <div key={note.id} className="flex items-center justify-between">
+                                  <div key={note.id} className="py-1">
                                     <span className="text-sm dark:text-gray-300">
-                                      {cleanDescription} {Number(note.amount || 0).toFixed(2)} €
+                                      {cleanDescription} <span className="font-medium">{Number(note.amount || 0).toFixed(2)} €</span>
                                     </span>
-                                    {(trip.status === 'draft' || !trip.status) && (
-                                      <div className="flex items-center space-x-1 print:hidden">
-                                        <button
-                                          onClick={() => handleEditNoteClick(note)}
-                                          className="text-blue-600 hover:text-blue-800"
-                                          title="Modifier"
-                                        >
-                                          <Edit className="h-3 w-3" />
-                                        </button>
-                                        <button
-                                          onClick={() => handleDeleteNoteClick(note.id)}
-                                          className="text-red-600 hover:text-red-800"
-                                          title="Supprimer"
-                                        >
-                                          <Trash2 className="h-3 w-3" />
-                                        </button>
-                                      </div>
-                                    )}
                                   </div>
                                 );
                               })}
@@ -668,6 +703,85 @@ const TripDetail: React.FC = () => {
         cancelText="Annuler"
         isLoading={isLoading}
       />
+
+      {/* Modal de sélection de notes */}
+      {noteSelectionModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {noteSelectionModal.action === 'edit' ? 'Modifier une note' : 'Supprimer une note'}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Catégorie : {noteSelectionModal.category}
+              </p>
+            </div>
+            <div className="px-6 py-4 max-h-96 overflow-y-auto">
+              <div className="space-y-2">
+                {noteSelectionModal.notes.map(note => {
+                  const cleanDescription = note.description
+                    .replace(/^Transport longue distance - /, '')
+                    .replace(/^Transport courte distance - /, '')
+                    .replace(/^Hébergement - /, '')
+                    .replace(/^Repas - /, '')
+                    .replace(/^Autres - /, '');
+
+                  return (
+                    <button
+                      key={note.id}
+                      onClick={() => handleNoteSelectionConfirm(note)}
+                      className="w-full text-left p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors touch-manipulation"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {cleanDescription}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(note.date).toLocaleDateString('fr-FR')} • {Number(note.amount || 0).toFixed(2)} €
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            {note.isVeloce && (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                VELOCE
+                              </span>
+                            )}
+                            {note.isPersonal && (
+                              <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                                Personnel
+                              </span>
+                            )}
+                            {note.receiptUrl && (
+                              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                📎 Facture
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="ml-2 flex-shrink-0">
+                          {noteSelectionModal.action === 'edit' ? (
+                            <Edit className="h-4 w-4 text-blue-600" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-600 flex justify-end">
+              <button
+                onClick={handleNoteSelectionClose}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
