@@ -49,9 +49,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
     // Force l'activation du clavier iOS avec setSelectionRange seulement si supporté
     setTimeout(() => {
       if (input.type === 'text' || input.type === 'password' || input.type === 'search' || input.type === 'url' || input.type === 'tel') {
-        const len = input.value.length;
-        input.setSelectionRange(len, len);
-      }
+          const len = input.value.length;
+          input.setSelectionRange(len, len);
+        }
     }, 50);
   };
 
@@ -131,9 +131,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
               },
               onChange: (e) => {
                 // Nettoyer les erreurs quand l'utilisateur tape
-                if (errors.email) {
-                  clearErrors('email');
-                }
+              if (errors.email) {
+                clearErrors('email');
+              }
               },
               onBlur: (e) => {
                 // Détecter l'auto-complétion après un délai
@@ -172,9 +172,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
                 },
                 onChange: (e) => {
                   // Nettoyer les erreurs quand l'utilisateur tape
-                  if (errors.password) {
-                    clearErrors('password');
-                  }
+                if (errors.password) {
+                  clearErrors('password');
+                }
                 },
                 onBlur: (e) => {
                   // Détecter l'auto-complétion après un délai

@@ -311,18 +311,18 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                 Type de {currentCategory.name.toLowerCase()} *
               </label>
               <div className="relative">
-                <select
-                  {...register('subcategory', { required: 'Veuillez sélectionner un type' })}
+              <select
+                {...register('subcategory', { required: 'Veuillez sélectionner un type' })}
                   className="w-full px-4 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white cursor-pointer appearance-none touch-manipulation"
                   style={{ fontSize: '16px', minHeight: '48px' }}
-                >
-                  <option value="">Sélectionner...</option>
-                  {currentCategory.subcategories.map((sub) => (
-                    <option key={sub.value} value={sub.value}>
-                      {sub.label}
-                    </option>
-                  ))}
-                </select>
+              >
+                <option value="">Sélectionner...</option>
+                {currentCategory.subcategories.map((sub) => (
+                  <option key={sub.value} value={sub.value}>
+                    {sub.label}
+                  </option>
+                ))}
+              </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -399,7 +399,7 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                   }}
                 >
                   <div className="relative">
-                    <input
+                  <input
                       type="radio"
                       value="veloce"
                       checked={watch('isVeloce') === true && watch('isPersonal') === false}
@@ -446,7 +446,7 @@ const ExpenseItemForm: React.FC<ExpenseItemFormProps> = ({ onAddExpense, onClose
                   }}
                 >
                   <div className="relative">
-                    <input
+                  <input
                       type="radio"
                       value="personal"
                       checked={watch('isPersonal') === true && watch('isVeloce') === false}

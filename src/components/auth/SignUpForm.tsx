@@ -305,8 +305,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onToggleMode }) => {
             </>
           ) : (
             <>
-              <UserPlus className="h-5 w-5 mr-2" />
-              Créer mon compte
+          <UserPlus className="h-5 w-5 mr-2" />
+          Créer mon compte
             </>
           )}
         </button>

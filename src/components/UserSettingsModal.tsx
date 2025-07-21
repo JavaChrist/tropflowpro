@@ -98,9 +98,9 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             Mes informations
           </h2>
@@ -112,8 +112,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-6">
+        {/* Body avec scroll */}
+        <div className="p-6 overflow-y-auto flex-1">
           {error && (
             <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
               <div className="flex">
@@ -303,7 +303,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       {/* Modal de confirmation annulation abonnement */}
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-60">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               Confirmer l'annulation
             </h3>
@@ -332,7 +332,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       {/* Modal de confirmation suppression compte */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-60">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
             <h3 className="text-lg font-medium text-red-900 dark:text-red-400 mb-4">
               ⚠️ Supprimer définitivement le compte
             </h3>
