@@ -63,7 +63,7 @@ const TeamManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userProfile?.uid]);
+  }, [userProfile]);
 
   useEffect(() => {
     loadData();
