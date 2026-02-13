@@ -3,7 +3,6 @@ import {
   doc,
   addDoc,
   updateDoc,
-  deleteDoc,
   getDoc,
   getDocs,
   query,
@@ -313,4 +312,5 @@ export class OrganizationService {
   }
 }
 
-export default new OrganizationService();
+const organizationService = new OrganizationService();
+export default organizationService;

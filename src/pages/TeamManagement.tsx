@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users,
@@ -40,7 +40,7 @@ const TeamManagement: React.FC = () => {
     type: 'success' | 'error' | 'warning' | 'info';
   }>({ isOpen: false, title: '', message: '', type: 'info' });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!userProfile) return;
     setIsLoading(true);
     setError(null);
@@ -63,11 +63,11 @@ const TeamManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userProfile?.uid]);
 
   useEffect(() => {
     loadData();
-  }, [userProfile?.uid]);
+  }, [loadData]);
 
   const handleCreateOrganization = async () => {
     if (!userProfile || !orgName.trim()) return;

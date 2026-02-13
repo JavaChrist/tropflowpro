@@ -7,7 +7,9 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendPasswordResetEmail,
-  deleteUser
+  deleteUser,
+  reauthenticateWithCredential,
+  EmailAuthProvider
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
@@ -338,12 +340,18 @@ export const useAuth = () => {
     }
   };
 
-  const deleteAccount = async () => {
+  const deleteAccount = async (password?: string) => {
     if (!user || !userProfile) return;
 
     try {
       setIsLoading(true);
       setError(null);
+
+      // Réauthentification requise par Firebase pour les actions sensibles
+      if (user.email && password) {
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+      }
 
       // Annuler l'abonnement Mollie d'abord si il existe
       if (userProfile.subscription.mollieSubscriptionId) {
@@ -362,7 +370,9 @@ export const useAuth = () => {
       let errorMessage = 'Erreur lors de la suppression du compte';
       
       if (error.code === 'auth/requires-recent-login') {
-        errorMessage = 'Pour des raisons de sécurité, veuillez vous reconnecter avant de supprimer votre compte';
+        errorMessage = 'Pour des raisons de sécurité, veuillez entrer votre mot de passe pour confirmer votre identité.';
+      } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = 'Mot de passe incorrect. Veuillez réessayer.';
       }
       
       setError(errorMessage);

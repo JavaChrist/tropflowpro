@@ -19,11 +19,13 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   isOpen,
   onClose
 }) => {
-  const { userProfile, updateUserProfile, cancelSubscription, deleteAccount, isLoading, error } = useAuth();
+  const { userProfile, updateUserProfile, cancelSubscription, deleteAccount, clearError, isLoading, error } = useAuth();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [needsReauth, setNeedsReauth] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<UserSettingsFormData>({
     defaultValues: {
@@ -80,14 +82,28 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     if (confirmText !== 'SUPPRIMER') {
       return;
     }
+    if (needsReauth && !deletePassword.trim()) {
+      return;
+    }
 
     try {
-      await deleteAccount();
-      // L'utilisateur sera automatiquement déconnecté
-    } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
+      await deleteAccount(needsReauth ? deletePassword : undefined);
       setShowDeleteConfirm(false);
       setConfirmText('');
+      setDeletePassword('');
+      setNeedsReauth(false);
+    } catch (err: unknown) {
+      console.error('Erreur lors de la suppression:', err);
+      const code = (err as { code?: string })?.code;
+      const msg = (err as Error)?.message || '';
+      if (code === 'auth/requires-recent-login' || msg.includes('mot de passe') || msg.includes('confirmer votre identité')) {
+        setNeedsReauth(true);
+      } else {
+        setShowDeleteConfirm(false);
+        setConfirmText('');
+        setDeletePassword('');
+        setNeedsReauth(false);
+      }
     }
   };
 
@@ -347,13 +363,30 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="Tapez SUPPRIMER"
-              className="w-full px-3 py-2 border border-red-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent mb-6"
+              className="w-full px-3 py-2 border border-red-300 dark:border-red-700 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent mb-4"
             />
+            {needsReauth && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Mot de passe (pour confirmer votre identité)
+                </label>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Entrez votre mot de passe"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                />
+              </div>
+            )}
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => {
                   setShowDeleteConfirm(false);
                   setConfirmText('');
+                  setDeletePassword('');
+                  setNeedsReauth(false);
+                  clearError();
                 }}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-md transition-colors"
               >
@@ -361,7 +394,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
               </button>
               <button
                 onClick={handleDeleteAccount}
-                disabled={isLoading || confirmText !== 'SUPPRIMER'}
+                disabled={isLoading || confirmText !== 'SUPPRIMER' || (needsReauth && !deletePassword.trim())}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? 'Suppression...' : 'Supprimer définitivement'}
