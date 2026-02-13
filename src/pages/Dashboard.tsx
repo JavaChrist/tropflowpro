@@ -220,7 +220,7 @@ const Dashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-            Bonjour {userProfile?.firstName} 👋
+            Bonjour {userProfile?.firstName}
           </h1>
           <p className="text-gray-600 dark:text-gray-300 mt-1">
             Voici un aperçu de vos déplacements et notes de frais
@@ -241,19 +241,25 @@ const Dashboard: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Cartes de statistiques */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-blue-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-blue-200 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-200 dark:bg-blue-900 rounded-lg">
+            <Link
+              to="/trips"
+              className="bg-blue-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-blue-200 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200 block cursor-pointer"
+            >
+              <div className="flex items-center min-w-0">
+                <div className="p-2 bg-blue-200 dark:bg-blue-900 rounded-lg flex-shrink-0">
                   <MapPin className="h-6 w-6 text-blue-700 dark:text-blue-400" />
                 </div>
-                <div className="ml-4">
-                  <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total déplacements</h2>
+                <div className="ml-4 min-w-0 flex-1 overflow-hidden">
+                  <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400 break-words">Total déplacements</h2>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalTrips}</p>
                 </div>
               </div>
-            </div>
+            </Link>
 
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-gray-300 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
+            <Link
+              to="/trips?status=draft"
+              className="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-gray-300 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200 block cursor-pointer"
+            >
               <div className="flex items-center">
                 <div className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg">
                   <FileText className="h-6 w-6 text-gray-700 dark:text-gray-300" />
@@ -263,9 +269,12 @@ const Dashboard: React.FC = () => {
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{draftTrips}</p>
                 </div>
               </div>
-            </div>
+            </Link>
 
-            <div className="bg-yellow-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-yellow-200 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
+            <Link
+              to="/trips?status=submitted"
+              className="bg-yellow-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-yellow-200 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200 block cursor-pointer"
+            >
               <div className="flex items-center">
                 <div className="p-2 bg-yellow-200 dark:bg-yellow-900 rounded-lg">
                   <Clock className="h-6 w-6 text-yellow-700 dark:text-yellow-400" />
@@ -275,9 +284,12 @@ const Dashboard: React.FC = () => {
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{submittedTrips}</p>
                 </div>
               </div>
-            </div>
+            </Link>
 
-            <div className="bg-green-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-green-200 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200">
+            <Link
+              to="/trips?status=paid"
+              className="bg-green-100 dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg border border-green-200 dark:border-gray-700 p-6 hover:bg-gray-200 dark:hover:bg-gray-700 hover:-translate-y-1 transition-all duration-200 block cursor-pointer"
+            >
               <div className="flex items-center">
                 <div className="p-2 bg-green-200 dark:bg-green-900 rounded-lg">
                   <CheckCircle className="h-6 w-6 text-green-700 dark:text-green-400" />
@@ -287,7 +299,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{paidTrips}</p>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 
@@ -306,7 +318,7 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             to="/trips/new"
-            className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group hover:-translate-y-1"
+            className="flex items-center p-4 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group hover:-translate-y-1"
           >
             <div className="p-2 bg-blue-200 dark:bg-blue-900 rounded-lg group-hover:bg-blue-300 dark:group-hover:bg-blue-800 transition-colors">
               <Plus className="h-5 w-5 text-blue-700 dark:text-blue-400" />
@@ -320,7 +332,7 @@ const Dashboard: React.FC = () => {
 
           <Link
             to="/trips"
-            className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group hover:-translate-y-1"
+            className="flex items-center p-4 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group hover:-translate-y-1"
           >
             <div className="p-2 bg-green-200 dark:bg-green-900 rounded-lg group-hover:bg-green-300 dark:group-hover:bg-green-800 transition-colors">
               <MapPin className="h-5 w-5 text-green-700 dark:text-green-400" />
@@ -334,7 +346,7 @@ const Dashboard: React.FC = () => {
 
           <Link
             to="/trips?status=draft"
-            className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group hover:-translate-y-1"
+            className="flex items-center p-4 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group hover:-translate-y-1"
           >
             <div className="p-2 bg-orange-200 dark:bg-orange-900 rounded-lg group-hover:bg-orange-300 dark:group-hover:bg-orange-800 transition-colors">
               <TrendingUp className="h-5 w-5 text-orange-700 dark:text-orange-400" />
@@ -385,7 +397,7 @@ const Dashboard: React.FC = () => {
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-gray-600">
             {recentTrips.map((trip) => (
-              <div key={trip.id} className="p-6 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:-translate-y-1">
+              <div key={trip.id} className="p-6 hover:shadow-[inset_4px_0_0_0_rgb(59_130_246)] dark:hover:shadow-[inset_4px_0_0_0_rgb(96_165_250)] hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:-translate-y-1">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">

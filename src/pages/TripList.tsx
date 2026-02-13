@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -20,10 +20,18 @@ import { fr } from 'date-fns/locale';
 import ConfirmModal from '../components/ConfirmModal';
 
 const TripList: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const { trips, loadTrips, deleteTrip, isLoading } = useTripStore();
   const { userProfile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const statusFromUrl = searchParams.get('status') || 'all';
+  const [statusFilter, setStatusFilter] = useState<string>(statusFromUrl);
+
+  // Synchroniser le filtre avec l'URL lors de la navigation
+  useEffect(() => {
+    setStatusFilter(statusFromUrl);
+  }, [statusFromUrl]);
+
   const [confirmDelete, setConfirmDelete] = useState<{
     isOpen: boolean;
     tripId: string;
