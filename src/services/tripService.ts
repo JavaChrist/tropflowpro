@@ -83,6 +83,62 @@ export class TripService {
     }
   }
 
+  // Dupliquer un déplacement avec ses notes de frais
+  async duplicateTrip(tripId: string, userProfile: UserProfile): Promise<string> {
+    try {
+      await this.checkTripCreationLimit(userProfile);
+
+      const trip = await this.getTrip(tripId);
+      if (!trip) throw new Error('Déplacement non trouvé');
+
+      const notes = await this.getTripNotes(tripId);
+      const now = new Date().toISOString();
+
+      const newTrip: Omit<Trip, 'id'> = {
+        ...trip,
+        name: `${trip.name} (copie)`,
+        status: 'draft',
+        userId: userProfile.uid,
+        organizationId: userProfile.organizationId,
+        contractNumber: userProfile.contractNumber,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      const newTripRef = await addDoc(collection(db, this.tripsCollection), {
+        ...newTrip,
+        createdAt: Timestamp.fromDate(new Date(now)),
+        updatedAt: Timestamp.fromDate(new Date(now))
+      });
+
+      for (const note of notes) {
+        const cleanData: Record<string, unknown> = {
+          tripId: newTripRef.id,
+          userId: userProfile.uid,
+          category: note.category,
+          subcategory: note.subcategory,
+          description: note.description,
+          amount: note.amount,
+          date: note.date,
+          isVeloce: note.isVeloce,
+          isPersonal: note.isPersonal,
+          createdAt: Timestamp.fromDate(new Date(now)),
+          updatedAt: Timestamp.fromDate(new Date(now))
+        };
+        if (note.receiptUrl) cleanData.receiptUrl = note.receiptUrl;
+        if (note.receiptName) cleanData.receiptName = note.receiptName;
+
+        await addDoc(collection(db, this.notesCollection), cleanData);
+      }
+
+      return newTripRef.id;
+    } catch (error) {
+      if (error instanceof PlanLimitError) throw error;
+      console.error('Erreur lors de la duplication du déplacement:', error);
+      throw error;
+    }
+  }
+
   // Mettre à jour un déplacement
   async updateTrip(tripId: string, updates: Partial<Trip>): Promise<void> {
     try {
@@ -126,26 +182,59 @@ export class TripService {
     }
   }
 
-  // Récupérer tous les déplacements d'un utilisateur
-  async getUserTrips(userId: string): Promise<Trip[]> {
+  // Récupérer tous les déplacements d'un utilisateur (ou de son équipe si Pro Entreprise)
+  async getUserTrips(userId: string, organizationId?: string): Promise<Trip[]> {
     try {
-      const q = query(
-        collection(db, this.tripsCollection),
-        where('userId', '==', userId)
-      );
+      let trips: Trip[];
 
-      const querySnapshot = await getDocs(q);
-      const trips = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
-        } as Trip;
-      });
+      if (organizationId) {
+        // Pro Entreprise : récupérer les déplacements de l'équipe (userId ou organizationId)
+        const qUser = query(
+          collection(db, this.tripsCollection),
+          where('userId', '==', userId)
+        );
+        const qOrg = query(
+          collection(db, this.tripsCollection),
+          where('organizationId', '==', organizationId)
+        );
 
-      // Tri côté client par date de mise à jour
+        const [userSnap, orgSnap] = await Promise.all([
+          getDocs(qUser),
+          getDocs(qOrg)
+        ]);
+
+        const tripIds = new Set<string>();
+        const allTrips: Trip[] = [];
+
+        [...userSnap.docs, ...orgSnap.docs].forEach(docSnap => {
+          if (tripIds.has(docSnap.id)) return;
+          tripIds.add(docSnap.id);
+          const data = docSnap.data();
+          allTrips.push({
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+            updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+          } as Trip);
+        });
+        trips = allTrips;
+      } else {
+        const q = query(
+          collection(db, this.tripsCollection),
+          where('userId', '==', userId)
+        );
+        const querySnapshot = await getDocs(q);
+        trips = querySnapshot.docs.map(docSnap => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+            updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+          } as Trip;
+        });
+      }
+
       return trips.sort((a, b) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       );

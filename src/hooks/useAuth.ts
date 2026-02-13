@@ -386,6 +386,12 @@ export const useAuth = () => {
 
   const clearError = () => setError(null);
 
+  const refreshUserProfile = async () => {
+    if (user) {
+      await loadUserProfile(user.uid, user);
+    }
+  };
+
   return {
     user,
     userProfile,
@@ -401,6 +407,7 @@ export const useAuth = () => {
     deleteAccount,
     logout,
     clearError,
+    refreshUserProfile,
     isAuthenticated: !!user // Authentifié si Firebase user existe, indépendamment du profil
   };
 };

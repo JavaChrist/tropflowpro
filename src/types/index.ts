@@ -35,14 +35,50 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   subscription: UserSubscription;
+  organizationId?: string; // Pro Entreprise : ID de l'organisation
+  role?: 'owner' | 'member'; // Pro Entreprise : rôle dans l'équipe
   createdAt: string;
   updatedAt: string;
+}
+
+// Organisation (Pro Entreprise)
+export interface Organization {
+  id: string;
+  name: string;
+  ownerId: string;
+  memberIds: string[];
+  maxMembers: number; // 10 pour Pro Entreprise
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Invitation à rejoindre une équipe
+export interface TeamInvite {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  email: string;
+  invitedBy: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Membre d'équipe avec infos profil
+export interface TeamMemberInfo {
+  uid: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'owner' | 'member';
+  joinedAt: string;
 }
 
 // Déplacement (container principal)
 export interface Trip {
   id: string;
   userId: string;
+  organizationId?: string; // Pro Entreprise : déplacement visible par l'équipe
   name: string; // "PI Planning Lyon"
   destination: string; // "Lyon"
   purpose: string; // "PI Planning"
@@ -130,7 +166,6 @@ export const AVAILABLE_PLANS: PlanFeatures[] = [
       'Multi-utilisateurs (jusqu\'à 10)',
       'Gestion d\'équipe',
       'Rapports consolidés',
-      'API d\'intégration',
       'Support dédié',
       'Facturation centralisée',
       'Offre sur mesure adaptée à vos besoins'

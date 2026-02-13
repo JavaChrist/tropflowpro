@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -7,6 +7,8 @@ import {
   Eye,
   Edit,
   Trash2,
+  Copy,
+  Download,
   MapPin,
   Calendar,
   FileText,
@@ -18,14 +20,23 @@ import useAuth from '../hooks/useAuth';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ConfirmModal from '../components/ConfirmModal';
+import { exportTripsToExcel } from '../utils/exportExcel';
 
 const TripList: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { trips, loadTrips, deleteTrip, isLoading } = useTripStore();
+  const navigate = useNavigate();
+  const { trips, loadTrips, deleteTrip, duplicateTrip, isLoading } = useTripStore();
   const { userProfile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const statusFromUrl = searchParams.get('status') || 'all';
   const [statusFilter, setStatusFilter] = useState<string>(statusFromUrl);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [collaboratorFilter, setCollaboratorFilter] = useState('');
+  const [destinationFilter, setDestinationFilter] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   // Synchroniser le filtre avec l'URL lors de la navigation
   useEffect(() => {
@@ -44,9 +55,9 @@ const TripList: React.FC = () => {
 
   useEffect(() => {
     if (userProfile?.uid) {
-      loadTrips(userProfile.uid);
+      loadTrips(userProfile.uid, userProfile.organizationId);
     }
-  }, [loadTrips, userProfile?.uid]);
+  }, [loadTrips, userProfile?.uid, userProfile?.organizationId]);
 
   const handleDeleteClick = (id: string, name: string) => {
     setConfirmDelete({
@@ -69,6 +80,41 @@ const TripList: React.FC = () => {
     setConfirmDelete({ isOpen: false, tripId: '', tripName: '' });
   };
 
+  const handleExport = async () => {
+    if (filteredTrips.length === 0) return;
+    setIsExporting(true);
+    try {
+      await exportTripsToExcel(filteredTrips);
+    } catch (err) {
+      console.error('Erreur lors de l\'export:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDuplicate = async (tripId: string) => {
+    if (!userProfile) return;
+    setDuplicatingId(tripId);
+    try {
+      const newId = await duplicateTrip(tripId, userProfile);
+      navigate(`/trips/${newId}`);
+    } catch (err) {
+      console.error('Erreur lors de la duplication:', err);
+    } finally {
+      setDuplicatingId(null);
+    }
+  };
+
+  // Liste des collaborateurs et destinations uniques pour les filtres
+  const uniqueCollaborators = Array.from(
+    new Set(
+      trips
+        .map(t => `${t.collaborator?.firstName || ''} ${t.collaborator?.lastName || ''}`.trim())
+        .filter(Boolean)
+    )
+  ).sort();
+  const uniqueDestinations = Array.from(new Set(trips.map(t => t.destination).filter(Boolean))).sort();
+
   // Filtrage des déplacements
   const filteredTrips = trips.filter(trip => {
     const matchesSearch = !searchTerm ||
@@ -78,7 +124,16 @@ const TripList: React.FC = () => {
 
     const matchesStatus = statusFilter === 'all' || trip.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const collaboratorName = `${trip.collaborator?.firstName || ''} ${trip.collaborator?.lastName || ''}`.trim();
+    const matchesCollaborator = !collaboratorFilter || collaboratorName === collaboratorFilter;
+    const matchesDestination = !destinationFilter || trip.destination === destinationFilter;
+
+    const depDate = new Date(trip.departureDate).getTime();
+    const retDate = new Date(trip.returnDate).getTime();
+    const matchesDateFrom = !dateFrom || depDate >= new Date(dateFrom).getTime();
+    const matchesDateTo = !dateTo || retDate <= new Date(dateTo + 'T23:59:59').getTime();
+
+    return matchesSearch && matchesStatus && matchesCollaborator && matchesDestination && matchesDateFrom && matchesDateTo;
   });
 
   const getStatusColor = (status: string) => {
@@ -127,7 +182,19 @@ const TripList: React.FC = () => {
             Gérez vos déplacements et leurs notes de frais
           </p>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={filteredTrips.length === 0 || isExporting}
+            className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isExporting ? (
+              <span className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            <span className="hidden sm:inline">Export Excel</span>
+          </button>
           <Link
             to="/trips/new"
             className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200 w-full sm:w-auto justify-center"
@@ -154,13 +221,13 @@ const TripList: React.FC = () => {
               />
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center">
               <Filter className="h-4 w-4 text-gray-400 mr-2" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Tous les statuts</option>
                 <option value="draft">Brouillons</option>
@@ -168,8 +235,64 @@ const TripList: React.FC = () => {
                 <option value="paid">Payés</option>
               </select>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {showFilters ? 'Masquer les filtres' : 'Filtres avancés'}
+            </button>
           </div>
         </div>
+
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date de départ à partir du</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date de retour avant le</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Destination</label>
+              <select
+                value={destinationFilter}
+                onChange={(e) => setDestinationFilter(e.target.value)}
+                className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm"
+              >
+                <option value="">Toutes les destinations</option>
+                {uniqueDestinations.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Collaborateur</label>
+              <select
+                value={collaboratorFilter}
+                onChange={(e) => setCollaboratorFilter(e.target.value)}
+                className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm"
+              >
+                <option value="">Tous les collaborateurs</option>
+                {uniqueCollaborators.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Liste des déplacements */}
@@ -232,11 +355,23 @@ const TripList: React.FC = () => {
                   <div className="flex items-center space-x-2 sm:space-x-3 min-h-[32px]">
                     <Link
                       to={`/trips/${trip.id}`}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded inline-flex items-center justify-center"
+                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded inline-flex items-center justify-center"
                       title="Voir le déplacement"
                     >
                       <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Link>
+                    <button
+                      onClick={() => handleDuplicate(trip.id)}
+                      disabled={duplicatingId === trip.id || !userProfile}
+                      className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded inline-flex items-center justify-center disabled:opacity-50"
+                      title="Dupliquer"
+                    >
+                      {duplicatingId === trip.id ? (
+                        <span className="animate-spin h-3 w-3 sm:h-4 sm:w-4 border-2 border-gray-400 border-t-transparent rounded-full" />
+                      ) : (
+                        <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
+                      )}
+                    </button>
                     {/* Bouton Modifier pour brouillons */}
                     {(trip.status === 'draft' || !trip.status) && (
                       <>

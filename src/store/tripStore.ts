@@ -11,9 +11,10 @@ interface TripStore {
   error: string | null;
 
   // Actions pour les déplacements
-  loadTrips: (userId: string) => Promise<void>;
+  loadTrips: (userId: string, organizationId?: string) => Promise<void>;
   loadTrip: (tripId: string) => Promise<void>;
   createTrip: (tripData: CreateTripData, userProfile: UserProfile) => Promise<string>;
+  duplicateTrip: (tripId: string, userProfile: UserProfile) => Promise<string>;
   updateTrip: (tripId: string, updates: Partial<Trip>) => Promise<void>;
   deleteTrip: (tripId: string) => Promise<void>;
   submitTrip: (tripId: string) => Promise<void>;
@@ -63,11 +64,11 @@ const useTripStore = create<TripStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  // Charger tous les déplacements de l'utilisateur
-  loadTrips: async (userId: string) => {
+  // Charger tous les déplacements de l'utilisateur (ou de l'équipe si Pro Entreprise)
+  loadTrips: async (userId: string, organizationId?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const trips = await tripService.getUserTrips(userId);
+      const trips = await tripService.getUserTrips(userId, organizationId);
       set({ trips, isLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors du chargement des déplacements';
@@ -111,6 +112,7 @@ const useTripStore = create<TripStore>((set, get) => ({
         returnDate: tripData.returnDate,
         remarks: tripData.remarks || '',
         userId: userProfile.uid,
+        organizationId: userProfile.organizationId,
         contractNumber: userProfile.contractNumber,
         collaborator: {
           firstName: userProfile.firstName,
@@ -125,12 +127,28 @@ const useTripStore = create<TripStore>((set, get) => ({
       const tripId = await tripService.createTrip(newTrip, userProfile);
 
       // Recharger la liste des déplacements
-      await state.loadTrips(userProfile.uid);
+      await state.loadTrips(userProfile.uid, userProfile.organizationId);
 
       set({ isLoading: false });
       return tripId;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création';
+      set({ isLoading: false, error: errorMessage });
+      throw error;
+    }
+  },
+
+  // Dupliquer un déplacement avec ses notes
+  duplicateTrip: async (tripId: string, userProfile: UserProfile): Promise<string> => {
+    const state = get();
+    set({ isLoading: true, error: null });
+    try {
+      const newTripId = await tripService.duplicateTrip(tripId, userProfile);
+      await state.loadTrips(userProfile.uid, userProfile.organizationId);
+      set({ isLoading: false });
+      return newTripId;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la duplication';
       set({ isLoading: false, error: errorMessage });
       throw error;
     }

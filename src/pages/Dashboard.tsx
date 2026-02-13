@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import useTripStore from '../store/tripStore';
 import useAuth from '../hooks/useAuth';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import UsageStats from '../components/UsageStats';
 import PlanModal from '../components/PlanModal';
@@ -40,9 +40,9 @@ const Dashboard: React.FC = () => {
   // Charger les déplacements au montage
   useEffect(() => {
     if (userProfile?.uid) {
-      loadTrips(userProfile.uid);
+      loadTrips(userProfile.uid, userProfile.organizationId);
     }
-  }, [loadTrips, userProfile?.uid]);
+  }, [loadTrips, userProfile?.uid, userProfile?.organizationId]);
 
   // Statistiques des déplacements
   const totalTrips = trips.length;
@@ -54,6 +54,12 @@ const Dashboard: React.FC = () => {
   const recentTrips = [...trips]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 5);
+
+  // Brouillons non soumis depuis plus de 7 jours (rappel)
+  const DRAFT_REMINDER_DAYS = 7;
+  const oldDrafts = trips.filter(
+    t => t.status === 'draft' && new Date(t.updatedAt) < subDays(new Date(), DRAFT_REMINDER_DAYS)
+  );
 
   const handleUpgradeClick = () => {
     setIsPlanModalOpen(true);
@@ -211,6 +217,31 @@ const Dashboard: React.FC = () => {
               >
                 Mettre à jour mon profil
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rappel : brouillons non soumis depuis plus de 7 jours */}
+      {oldDrafts.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-medium text-amber-800 dark:text-amber-200">
+                Rappel : {oldDrafts.length} brouillon{oldDrafts.length > 1 ? 's' : ''} non soumis
+              </h3>
+              <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                Vous avez des déplacements en brouillon non modifiés depuis plus de {DRAFT_REMINDER_DAYS} jours.
+                Pensez à les soumettre pour validation.
+              </p>
+              <Link
+                to="/trips?status=draft"
+                className="inline-flex items-center mt-3 px-3 py-1.5 text-sm font-medium text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-800/50 rounded-md hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
+              >
+                Voir les brouillons
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Link>
             </div>
           </div>
         </div>

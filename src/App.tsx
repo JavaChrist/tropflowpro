@@ -5,6 +5,8 @@ import AuthPage from './pages/AuthPage';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import TripList from './pages/TripList';
+import TeamManagement from './pages/TeamManagement';
+import ConsolidatedReports from './pages/ConsolidatedReports';
 import CreateTrip from './pages/CreateTrip';
 import TripDetail from './pages/TripDetail';
 import EditTrip from './pages/EditTrip';
@@ -52,6 +54,10 @@ function App() {
             <Routes>
               {/* Dashboard - Page d'accueil */}
               <Route path="/" element={<Dashboard />} />
+
+              {/* Routes Pro Entreprise */}
+              <Route path="/team" element={<TeamManagement />} />
+              <Route path="/reports" element={<ConsolidatedReports />} />
 
               {/* Routes pour les déplacements */}
               <Route path="/trips" element={<TripList />} />

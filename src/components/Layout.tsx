@@ -10,7 +10,9 @@ import {
   User,
   Home,
   Crown,
-  Mail
+  Mail,
+  Users,
+  BarChart3
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import UserSettingsModal from './UserSettingsModal';
@@ -19,6 +21,7 @@ import ConfirmModal from './ConfirmModal';
 import InstallButton from './InstallButton';
 import PlanModal from './PlanModal';
 import ContactModal from './ContactModal';
+import InviteBanner from './InviteBanner';
 import AlertModal from './AlertModal';
 import { PlanType } from '../types';
 import PlanService from '../services/planService';
@@ -43,10 +46,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }>({ isOpen: false, title: '', message: '', type: 'info' });
   const { userProfile, logout, updateUserSubscription, cancelSubscription } = useAuth();
 
+  const showTeamFeatures = userProfile?.subscription.planId === 'pro_enterprise' || !!userProfile?.organizationId;
+
   const navigation = [
     { name: 'Tableau de bord', href: '/', icon: Home },
     { name: 'Mes déplacements', href: '/trips', icon: MapPin },
     { name: 'Nouveau déplacement', href: '/trips/new', icon: Plus },
+    ...(showTeamFeatures ? [
+      { name: 'Équipe', href: '/team', icon: Users },
+      { name: 'Rapports consolidés', href: '/reports', icon: BarChart3 },
+    ] : []),
   ];
 
   const isActiveRoute = (href: string) => {
@@ -59,6 +68,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (href === '/trips/new') {
       return location.pathname === '/trips/new';
     }
+    if (href === '/team') return location.pathname === '/team';
+    if (href === '/reports') return location.pathname === '/reports';
     return location.pathname === href;
   };
 
@@ -131,12 +142,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <InviteBanner />
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 print:hidden safe-area-top">
+      <header className="relative bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 print:hidden safe-area-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 safe-area-inset">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-16 gap-4 min-w-0">
             {/* Logo */}
-            <div className="flex items-center">
+            <div className="flex items-center flex-shrink-0 min-w-0">
               <Link to="/" className="flex-shrink-0 flex items-center hover:opacity-80 transition-opacity">
                 <div className="relative">
                   {/* Logo TropFlow Pro */}
@@ -154,7 +166,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden md:flex items-center space-x-6 lg:space-x-8 ml-4 min-w-0">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -173,11 +185,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               })}
             </nav>
 
-            {/* User menu and Mobile menu button */}
-            <div className="flex items-center space-x-4">
-              {/* User info - Desktop */}
-              <div className="hidden md:flex items-center space-x-3">
-                <div className="text-right">
+            {/* User info + Menu hamburger (mobile et desktop) */}
+            <div className="flex items-center space-x-4 flex-shrink-0">
+              {/* User info - visible sur tous les écrans */}
+              <div className="flex items-center space-x-3">
+                <div className="text-right hidden sm:block">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
                     {userProfile?.displayName}
                   </p>
@@ -190,60 +202,33 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </div>
 
-              {/* Theme Toggle, Contact, Plans, Settings and Logout - Desktop */}
-              <div className="hidden md:flex items-center space-x-2">
-                <ThemeToggle />
-                <button
-                  onClick={() => setIsContactModalOpen(true)}
-                  className="p-2 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 transition-colors duration-200"
-                  title="Nous contacter"
-                >
-                  <Mail className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => setIsPlanModalOpen(true)}
-                  className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-200"
-                  title="Gérer mon plan"
-                >
-                  <Crown className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-200"
-                  title="Paramètres"
-                >
-                  <Settings className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={handleLogoutClick}
-                  className="p-2 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-900/20 transition-colors duration-200"
-                  title="Se déconnecter"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Mobile menu button */}
-              <div className="md:hidden">
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-200"
-                >
-                  {isMobileMenuOpen ? (
-                    <X className="h-6 w-6" />
-                  ) : (
-                    <Menu className="h-6 w-6" />
-                  )}
-                </button>
-              </div>
+              {/* Bouton menu hamburger - mobile et desktop */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-200"
+                aria-label="Menu"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Menu hamburger - Mobile et Desktop */}
         {isMobileMenuOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+          <>
+            {/* Overlay pour fermer au clic (desktop) */}
+            <div
+              className="hidden md:block fixed inset-0 z-40"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="md:absolute md:right-4 md:top-16 md:z-50 md:w-72">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-gray-800 border-t md:border md:rounded-lg md:shadow-xl border-gray-200 dark:border-gray-700">
               {/* User info - Mobile */}
               <div className="px-3 py-4 border-b border-gray-200 dark:border-gray-600">
                 <div className="flex items-center">
@@ -261,26 +246,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </div>
 
-              {/* Navigation items */}
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${isActiveRoute(item.href)
-                      ? 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
-                  >
-                    <Icon className="h-5 w-5 mr-3" />
-                    {item.name}
-                  </Link>
-                );
-              })}
+              {/* Navigation items - visible sur mobile */}
+              <div className="md:hidden">
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${isActiveRoute(item.href)
+                        ? 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                    >
+                      <Icon className="h-5 w-5 mr-3" />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
 
-              {/* Theme Toggle, Contact, Settings and Logout - Mobile */}
+              {/* Theme Toggle, Contact, Plans, Settings et Logout - Mobile et Desktop */}
               <div className="border-t border-gray-200 dark:border-gray-600 pt-3 space-y-1">
                 <div className="flex items-center justify-between px-3 py-2">
                   <span className="text-base font-medium text-gray-500 dark:text-gray-400">Thème</span>
@@ -295,6 +282,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 >
                   <Mail className="h-5 w-5 mr-3" />
                   Nous contacter
+                </button>
+                <button
+                  onClick={() => {
+                    setIsPlanModalOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 w-full transition-colors duration-200"
+                >
+                  <Crown className="h-5 w-5 mr-3" />
+                  Gérer mon plan
                 </button>
                 <button
                   onClick={() => {
@@ -316,6 +313,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </div>
           </div>
+          </>
         )}
       </header>
 
