@@ -62,11 +62,15 @@ export class TripService {
       // 1. Vérifier les limites du plan
       await this.checkTripCreationLimit(userProfile);
 
-      // 2. Créer le déplacement
+      // 2. Créer le déplacement (Firestore n'accepte pas undefined)
+      const { createdAt, updatedAt, ...rest } = tripData;
+      const cleanData = Object.fromEntries(
+        Object.entries(rest).filter(([, v]) => v !== undefined)
+      );
       const docRef = await addDoc(collection(db, this.tripsCollection), {
-        ...tripData,
-        createdAt: Timestamp.fromDate(new Date(tripData.createdAt)),
-        updatedAt: Timestamp.fromDate(new Date(tripData.updatedAt))
+        ...cleanData,
+        createdAt: Timestamp.fromDate(new Date(createdAt)),
+        updatedAt: Timestamp.fromDate(new Date(updatedAt))
       });
 
 
@@ -94,22 +98,22 @@ export class TripService {
       const notes = await this.getTripNotes(tripId);
       const now = new Date().toISOString();
 
-      const newTrip: Omit<Trip, 'id'> = {
+      const newTripData: Record<string, unknown> = {
         ...trip,
         name: `${trip.name} (copie)`,
         status: 'draft',
         userId: userProfile.uid,
-        organizationId: userProfile.organizationId,
         contractNumber: userProfile.contractNumber,
-        createdAt: now,
-        updatedAt: now
-      };
-
-      const newTripRef = await addDoc(collection(db, this.tripsCollection), {
-        ...newTrip,
         createdAt: Timestamp.fromDate(new Date(now)),
         updatedAt: Timestamp.fromDate(new Date(now))
-      });
+      };
+      if (userProfile.organizationId) {
+        newTripData.organizationId = userProfile.organizationId;
+      } else {
+        delete newTripData.organizationId;
+      }
+
+      const newTripRef = await addDoc(collection(db, this.tripsCollection), newTripData);
 
       for (const note of notes) {
         const cleanData: Record<string, unknown> = {

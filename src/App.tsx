@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import useAuth from './hooks/useAuth';
 import AuthPage from './pages/AuthPage';
 import Layout from './components/Layout';
@@ -15,42 +16,17 @@ import LoadingSpinner from './components/LoadingSpinner';
 import { ThemeProvider } from './contexts/ThemeContext';
 import './App.css';
 
-function App() {
+function AppContent() {
   const { isAuthenticated, isLoading, userProfile } = useAuth();
 
-  // Afficher un spinner pendant le chargement de l'authentification
-  if (isLoading) {
-    return (
-      <ThemeProvider>
-        <LoadingSpinner />
-      </ThemeProvider>
-    );
-  }
+  if (isLoading) return <LoadingSpinner />;
+  if (!isAuthenticated) return <AuthPage />;
+  if (!userProfile) return <LoadingSpinner />;
 
-  // Si l'utilisateur n'est pas connecté, afficher la page d'authentification
-  if (!isAuthenticated) {
-    return (
-      <ThemeProvider>
-        <AuthPage />
-      </ThemeProvider>
-    );
-  }
-
-  // Si l'utilisateur est connecté mais que le profil n'est pas encore chargé
-  if (!userProfile) {
-    return (
-      <ThemeProvider>
-        <LoadingSpinner />
-      </ThemeProvider>
-    );
-  }
-
-  // Si l'utilisateur est connecté, afficher l'application principale
   return (
-    <ThemeProvider>
-      <Router>
-        <div className="App">
-          <Layout>
+    <Router>
+      <div className="App">
+        <Layout>
             <Routes>
               {/* Dashboard - Page d'accueil */}
               <Route path="/" element={<Dashboard />} />
@@ -73,7 +49,16 @@ function App() {
             </Routes>
           </Layout>
         </div>
-      </Router>
+    </Router>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

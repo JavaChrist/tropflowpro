@@ -112,7 +112,7 @@ const useTripStore = create<TripStore>((set, get) => ({
         returnDate: tripData.returnDate,
         remarks: tripData.remarks || '',
         userId: userProfile.uid,
-        organizationId: userProfile.organizationId,
+        ...(userProfile.organizationId && { organizationId: userProfile.organizationId }),
         contractNumber: userProfile.contractNumber,
         collaborator: {
           firstName: userProfile.firstName,
