@@ -328,7 +328,7 @@ const TripDetail: React.FC = () => {
   const categories = ['transport_long', 'transport_short', 'accommodation', 'meals', 'other'];
 
   return (
-    <div className="space-y-6 print-single-page">
+    <div className="space-y-6 print-single-page min-w-0">
       {/* Header pour l'écran */}
       <div className="flex items-center justify-between print:hidden">
         <div className="flex items-center space-x-4">
@@ -414,7 +414,7 @@ const TripDetail: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:block">
         {/* Informations principales */}
-        <div className="lg:col-span-2 space-y-6 print:col-span-full print:space-y-3">
+        <div className="lg:col-span-2 space-y-6 print:col-span-full print:space-y-3 min-w-0">
           {/* Informations du déplacement - Simplifiées */}
           <div className="bg-gray-800 text-white rounded-lg p-6 print:p-4 print-compact">
             <div className="grid grid-cols-2 gap-4 text-sm print:text-xs print:gap-2">
@@ -436,7 +436,7 @@ const TripDetail: React.FC = () => {
           </div>
 
           {/* Tableau des frais - Style capture d'écran */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden print-table">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden print-table min-w-0 max-w-full">
             <div className="p-6 border-b border-gray-200 dark:border-gray-600 print:p-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white print:text-base">
@@ -456,13 +456,13 @@ const TripDetail: React.FC = () => {
 
             {/* Tableau style capture d'écran */}
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[280px] table-fixed">
                 <thead className="bg-gray-800 text-white">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase print:py-2">Frais Prévisionnels</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase print:py-2">Via VELOCE</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase print:py-2">Frais perso</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase print:py-2">Commentaires</th>
+                    <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium uppercase print:py-2 w-[40%] sm:w-auto">Frais Prévisionnels</th>
+                    <th className="px-1 sm:px-4 py-3 text-center text-xs font-medium uppercase print:py-2 w-[15%] sm:w-auto">Via VELOCE</th>
+                    <th className="px-1 sm:px-4 py-3 text-center text-xs font-medium uppercase print:py-2 w-[15%] sm:w-auto">Frais perso</th>
+                    <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium uppercase print:py-2 w-[30%] sm:w-auto">Commentaires</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -473,7 +473,7 @@ const TripDetail: React.FC = () => {
 
                     return (
                       <tr key={category} className="bg-gray-50 dark:bg-gray-700">
-                        <td className="px-4 py-4 font-medium text-gray-900 dark:text-white print:py-2">
+                        <td className="px-2 sm:px-4 py-4 font-medium text-gray-900 dark:text-white print:py-2">
                           <div className="flex flex-col">
                             <span className="mb-2">{getCategoryName(category)}</span>
                             {categoryNotes.length > 0 && (trip.status === 'draft' || !trip.status) && (
@@ -496,13 +496,13 @@ const TripDetail: React.FC = () => {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-center print:py-2">
+                        <td className="px-1 sm:px-4 py-4 text-center print:py-2">
                           <span className="text-lg">{hasVeloce ? '☑' : '☐'}</span>
                         </td>
-                        <td className="px-4 py-4 text-center print:py-2">
+                        <td className="px-1 sm:px-4 py-4 text-center print:py-2">
                           <span className="text-lg">{hasPersonal ? '☑' : '☐'}</span>
                         </td>
-                        <td className="px-4 py-4 print:py-2">
+                        <td className="px-2 sm:px-4 py-4 print:py-2 break-words">
                           {categoryNotes.length > 0 ? (
                             <div className="space-y-1">
                               {categoryNotes.map(note => {
